@@ -4096,6 +4096,7 @@ GameObject:
   - component: {fileID: 642903140}
   - component: {fileID: 642903141}
   - component: {fileID: 642903142}
+  - component: {fileID: 642903143}
   m_Layer: 0
   m_Name: mogi_bot
   m_TagString: robot
@@ -4187,6 +4188,23 @@ MonoBehaviour:
     e31: 0
     e32: 0
     e33: 0
+--- !u!114 &642903143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 642903137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dabde9772cabbeb5696901dba052df97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topicName: /tf
+  publishRate: 20
+  baseLink: {fileID: 1795583837}
+  scanLink: {fileID: 702351557}
+  cameraLink: {fileID: 1895710329}
 --- !u!1 &646099604
 GameObject:
   m_ObjectHideFlags: 0
@@ -4590,6 +4608,7 @@ GameObject:
   - component: {fileID: 702351560}
   - component: {fileID: 702351559}
   - component: {fileID: 702351558}
+  - component: {fileID: 702351562}
   m_Layer: 0
   m_Name: scan_link
   m_TagString: Untagged
@@ -4727,6 +4746,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   IsBaseLink: 0
+--- !u!114 &702351562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 702351556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12b8790466365e0ca969e11e9452d9b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topicName: /scan
+  frameId: scan_link
+  publishRate: 10
+  angleMin: -180
+  angleMax: 180
+  numRays: 360
+  rangeMin: 0.1
+  rangeMax: 10
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 51
 --- !u!1 &712268174
 GameObject:
   m_ObjectHideFlags: 0
