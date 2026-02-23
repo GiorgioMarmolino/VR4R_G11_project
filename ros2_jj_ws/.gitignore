@@ -1,0 +1,17 @@
+# ROS 2 build artifacts
+build/
+install/
+log/
+
+# Colcon
+.colcon/
+
+# Python
+__pycache__/
+*.pyc
+
+# VSCode (opzionale)
+.vscode/
+
+# ROS logs
+*.log
