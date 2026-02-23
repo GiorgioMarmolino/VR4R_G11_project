@@ -51,6 +51,7 @@ public class RobotController : MonoBehaviour
         // Leggi velocità lineare (avanti/indietro) e angolare (rotazione)
         linearSpeed = (float)msg.linear.x;
         angularSpeed = (float)msg.angular.z;
+        Debug.Log($"Ricevuto: linear={linearSpeed}, angular={angularSpeed}");
     }
 
     void FixedUpdate()
