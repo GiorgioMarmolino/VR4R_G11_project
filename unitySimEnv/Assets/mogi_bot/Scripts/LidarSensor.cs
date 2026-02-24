@@ -21,7 +21,7 @@ public class LidarSensor : MonoBehaviour
     [Tooltip("Angolo massimo in gradi (di solito 180)")]
     public float angleMax = 180f;
     [Tooltip("Numero di raggi totali")]
-    public int numRays = 360;
+    public int numRays = 720;
     [Tooltip("Distanza minima di rilevamento in metri")]
     public float rangeMin = 0.1f;
     [Tooltip("Distanza massima di rilevamento in metri")]

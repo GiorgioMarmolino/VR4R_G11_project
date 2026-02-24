@@ -27,8 +27,13 @@ public class TFPublisher : MonoBehaviour
     private float publishInterval;
     private float lastPublishTime;
 
+    private Vector3 startPosition;
+    private Quaternion startRotation;
+
     void Start()
     {
+        startPosition = baseLink.position;
+        startRotation = baseLink.rotation;
         ros = ROSConnection.GetOrCreateInstance();
         ros.RegisterPublisher<TFMessageMsg>(topicName);
 
@@ -78,12 +83,12 @@ public class TFPublisher : MonoBehaviour
         var transforms = new System.Collections.Generic.List<TransformStampedMsg>();
 
         // 1. map -> odom (statica, odom coincide con map in assenza di odometria reale)
-        //transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
+        transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
 
         // 2. odom -> base_footprint (posizione del robot nel mondo)
         if (baseLink != null)
         {
-            Vector3 unityPos = baseLink.position;
+            /*Vector3 unityPos = baseLink.position;
             Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y); 
             Quaternion unityRot = baseLink.rotation;
             Quaternion rosRotation = new Quaternion(
@@ -92,6 +97,19 @@ public class TFPublisher : MonoBehaviour
                 unityRot.y,   // Unity Y → ROS Z
                 unityRot.w    // W rimane
             );
+            
+            */
+
+            Vector3 unityPos = baseLink.position - startPosition;
+            Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y);
+            Quaternion unityRot = Quaternion.Inverse(startRotation) * baseLink.rotation;
+            Quaternion rosRotation = new Quaternion(
+                unityRot.z, // ORIGINARIO COL -Z
+                -unityRot.x,
+                unityRot.y,
+                unityRot.w
+            );
+            
             transforms.Add(CreateTransform("odom", "base_footprint", rosPosition, rosRotation, stamp));
         }
 
