@@ -54,26 +54,44 @@ public class TFPublisher : MonoBehaviour
 
     void PublishTF()
     {
+        //TimeMsg stamp = new TimeMsg
+        //{
+        //    sec = (int)Time.time,
+        //    nanosec = (uint)((Time.time - Mathf.Floor(Time.time)) * 1e9)
+        //};
+        //TimeMsg stamp = ros.Now();
+
+        double unixTime = (System.DateTime.UtcNow - 
+                   new System.DateTime(1970, 1, 1)).TotalSeconds;
+
+        uint sec = (uint)System.Math.Floor(unixTime);
+        uint nanosec = (uint)((unixTime - sec) * 1e9);
+
         TimeMsg stamp = new TimeMsg
         {
-            sec = (int)Time.time,
-            nanosec = (uint)((Time.time - Mathf.Floor(Time.time)) * 1e9)
+            sec = (int)sec,
+            nanosec = nanosec
         };
+
 
         // Lista di tutte le trasformazioni da pubblicare
         var transforms = new System.Collections.Generic.List<TransformStampedMsg>();
 
         // 1. map -> odom (statica, odom coincide con map in assenza di odometria reale)
-        transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
+        //transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
 
         // 2. odom -> base_footprint (posizione del robot nel mondo)
         if (baseLink != null)
         {
-            // Converti da coordinate Unity a ROS manualmente (Unity: Y-up, ROS: Z-up)
             Vector3 unityPos = baseLink.position;
-            Vector3 rosPosition = new Vector3(-unityPos.z, -unityPos.x, unityPos.y);
+            Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y); 
             Quaternion unityRot = baseLink.rotation;
-            Quaternion rosRotation = new Quaternion(-unityRot.z, -unityRot.x, unityRot.y, unityRot.w);
+            Quaternion rosRotation = new Quaternion(
+                -unityRot.z,   // Unity Z → ROS X
+                -unityRot.x,   // Unity X → ROS Y
+                unityRot.y,   // Unity Y → ROS Z
+                unityRot.w    // W rimane
+            );
             transforms.Add(CreateTransform("odom", "base_footprint", rosPosition, rosRotation, stamp));
         }
 

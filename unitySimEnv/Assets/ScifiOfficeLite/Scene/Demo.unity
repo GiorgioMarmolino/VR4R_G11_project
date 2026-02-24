@@ -1594,7 +1594,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1880379785}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
         m_MethodName: MobileCrouch
         m_Mode: 1
@@ -2209,7 +2209,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -2225,7 +2225,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -3285,7 +3285,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -3301,7 +3301,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -3479,7 +3479,7 @@ Transform:
   m_GameObject: {fileID: 543428679}
   serializedVersion: 2
   m_LocalRotation: {x: 0.24712203, y: -0.6642655, z: 0.24414016, w: 0.66187435}
-  m_LocalPosition: {x: 8.4, y: 2.86, z: 21.939}
+  m_LocalPosition: {x: 8.37, y: 2.76, z: 40.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4119,7 +4119,6 @@ Transform:
   m_Children:
   - {fileID: 896561695}
   - {fileID: 1842646136}
-  - {fileID: 1880379784}
   m_Father: {fileID: 1685142018}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &642903140
@@ -4765,7 +4764,7 @@ MonoBehaviour:
   angleMax: 180
   numRays: 360
   rangeMin: 0.1
-  rangeMax: 10
+  rangeMax: 20
   layerMask:
     serializedVersion: 2
     m_Bits: 51
@@ -8289,7 +8288,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -8305,7 +8304,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -10629,7 +10628,8 @@ Transform:
   m_LocalPosition: {x: 4.285, y: 2.017, z: 30.808}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1880379784}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!136 &1487248026
@@ -13091,8 +13091,8 @@ GameObject:
   - component: {fileID: 1880379784}
   - component: {fileID: 1880379787}
   - component: {fileID: 1880379786}
-  - component: {fileID: 1880379785}
   - component: {fileID: 1880379788}
+  - component: {fileID: 1880379789}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -13109,32 +13109,12 @@ Transform:
   m_GameObject: {fileID: 1880379783}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: -1}
+  m_LocalPosition: {x: -4.285, y: -1.4169999, z: -1.2880001}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 642903138}
+  m_Father: {fileID: 1487248025}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1880379785
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1880379783}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ecdae056ad6f954496b395d7469d96e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerBody: {fileID: 1487248025}
-  controlType: 1
-  speed: 3
-  accelerationRate: 12
-  crouchFactor: 0.5
-  decelerationFactor: 1
-  mouseSensitivity: 50
-  canvas: {fileID: 1043918727}
 --- !u!81 &1880379786
 AudioListener:
   m_ObjectHideFlags: 0
@@ -13176,7 +13156,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 62.8
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -13238,6 +13218,21 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &1880379789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1880379783}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fa59a6748d03efdbe2eb8c58ef850a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 1795583837}
+  offset: {x: 0, y: 0.5, z: -1}
+  rotateWithTarget: 1
 --- !u!4 &1884986593 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5201423646680458952, guid: ea0853a3b2545524481b0c984f27afd1,
@@ -13300,7 +13295,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
@@ -13316,7 +13311,7 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1880379785}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: ScifiOffice.DemoFirstPersonController, Assembly-CSharp
           m_MethodName: MobileWalk
           m_Mode: 3
