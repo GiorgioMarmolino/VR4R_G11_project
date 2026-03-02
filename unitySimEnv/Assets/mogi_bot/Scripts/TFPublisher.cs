@@ -86,30 +86,27 @@ public class TFPublisher : MonoBehaviour
         transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
 
         // 2. odom -> base_footprint (posizione del robot nel mondo)
-        if (baseLink != null)
-        {
-            /*Vector3 unityPos = baseLink.position;
-            Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y); 
-            Quaternion unityRot = baseLink.rotation;
-            Quaternion rosRotation = new Quaternion(
-                -unityRot.z,   // Unity Z → ROS X
-                -unityRot.x,   // Unity X → ROS Y
-                unityRot.y,   // Unity Y → ROS Z
-                unityRot.w    // W rimane
-            );
-            
-            */
-
+        if (baseLink != null){            
             Vector3 unityPos = baseLink.position - startPosition;
             Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y);
             Quaternion unityRot = Quaternion.Inverse(startRotation) * baseLink.rotation;
+            
             Quaternion rosRotation = new Quaternion(
-                unityRot.z, // ORIGINARIO COL -Z
+                unityRot.z,
                 -unityRot.x,
-                unityRot.y,
+                -unityRot.y,
                 unityRot.w
             );
-            
+            // Normalizza: w deve essere positivo per convenzione
+            if (rosRotation.w < 0)
+            {
+                rosRotation = new Quaternion(
+                    -rosRotation.x,
+                    -rosRotation.y,
+                    -rosRotation.z,
+                    -rosRotation.w
+                );
+            }
             transforms.Add(CreateTransform("odom", "base_footprint", rosPosition, rosRotation, stamp));
         }
 

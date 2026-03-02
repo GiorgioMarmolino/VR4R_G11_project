@@ -25,7 +25,7 @@ public class LidarSensor : MonoBehaviour
     [Tooltip("Distanza minima di rilevamento in metri")]
     public float rangeMin = 0.1f;
     [Tooltip("Distanza massima di rilevamento in metri")]
-    public float rangeMax = 20f;
+    public float rangeMax = 10f;
     [Tooltip("Layer da ignorare nei raycast (es. il robot stesso)")]
     public LayerMask layerMask;
 
