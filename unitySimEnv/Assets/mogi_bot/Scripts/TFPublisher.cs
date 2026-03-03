@@ -47,7 +47,6 @@ public class TFPublisher : MonoBehaviour
         if (scanLink == null)
             Debug.LogError("[TFPublisher] ERRORE: Assegna scan_link nell'Inspector!");
     }
-
     void Update()
     {
         if (Time.time - lastPublishTime >= publishInterval)
@@ -56,16 +55,9 @@ public class TFPublisher : MonoBehaviour
             lastPublishTime = Time.time;
         }
     }
-
+    //===================================================================================
     void PublishTF()
     {
-        //TimeMsg stamp = new TimeMsg
-        //{
-        //    sec = (int)Time.time,
-        //    nanosec = (uint)((Time.time - Mathf.Floor(Time.time)) * 1e9)
-        //};
-        //TimeMsg stamp = ros.Now();
-
         double unixTime = (System.DateTime.UtcNow - 
                    new System.DateTime(1970, 1, 1)).TotalSeconds;
 
@@ -78,26 +70,24 @@ public class TFPublisher : MonoBehaviour
             nanosec = nanosec
         };
 
-
-        // Lista di tutte le trasformazioni da pubblicare
-        var transforms = new System.Collections.Generic.List<TransformStampedMsg>();
+        var transforms = new System.Collections.Generic.List<TransformStampedMsg>(); // Lista di tutte le trasformazioni da pubblicare
 
         // 1. map -> odom (statica, odom coincide con map in assenza di odometria reale)
-        transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
-
-        // 2. odom -> base_footprint (posizione del robot nel mondo)
-        if (baseLink != null){            
+        //transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
+        /*if (baseLink != null)
+        {
             Vector3 unityPos = baseLink.position - startPosition;
             Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y);
+
             Quaternion unityRot = Quaternion.Inverse(startRotation) * baseLink.rotation;
-            
             Quaternion rosRotation = new Quaternion(
                 unityRot.z,
                 -unityRot.x,
                 -unityRot.y,
                 unityRot.w
             );
-            // Normalizza: w deve essere positivo per convenzione
+
+            // Normalizza: w deve essere positivo per convenzione ROS
             if (rosRotation.w < 0)
             {
                 rosRotation = new Quaternion(
@@ -107,9 +97,37 @@ public class TFPublisher : MonoBehaviour
                     -rosRotation.w
                 );
             }
+
+            transforms.Add(CreateTransform("map", "odom", rosPosition, rosRotation, stamp));
+        }*/
+        //==========================================================
+        // 2. odom -> base_footprint (posizione del robot nel mondo)
+        
+        if (baseLink != null){            
+            Vector3 unityPos = baseLink.position - startPosition;
+            Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y);
+            Quaternion unityRot = Quaternion.Inverse(startRotation) * baseLink.rotation;
+            
+            Quaternion rosRotation = new Quaternion(
+                unityRot.z,
+                -unityRot.x,
+                -unityRot.y,//temp rimosso -
+                unityRot.w
+            );
+            // Normalizza: w deve essere positivo per convenzione
+            /*if (rosRotation.w < 0)
+            {
+                rosRotation = new Quaternion(
+                    -rosRotation.x,
+                    -rosRotation.y,
+                    -rosRotation.z,
+                    -rosRotation.w
+                );
+            }*/
             transforms.Add(CreateTransform("odom", "base_footprint", rosPosition, rosRotation, stamp));
         }
-
+        
+        //==========================================================
         // 3. base_footprint -> base_link (offset verticale, di solito zero)
         transforms.Add(CreateTransform("base_footprint", "base_link", Vector3.zero, Quaternion.identity, stamp));
 
@@ -117,7 +135,7 @@ public class TFPublisher : MonoBehaviour
         if (scanLink != null && baseLink != null)
         {
             Vector3 unityRelPos = baseLink.InverseTransformPoint(scanLink.position);
-            Vector3 relPos = new Vector3(-unityRelPos.z, -unityRelPos.x, unityRelPos.y);
+            Vector3 relPos = new Vector3(unityRelPos.z, -unityRelPos.x, unityRelPos.y);
             Quaternion unityRelRot = Quaternion.Inverse(baseLink.rotation) * scanLink.rotation;
             Quaternion relRot = new Quaternion(-unityRelRot.z, -unityRelRot.x, unityRelRot.y, unityRelRot.w);
             transforms.Add(CreateTransform("base_link", "scan_link", relPos, relRot, stamp));
@@ -129,7 +147,7 @@ public class TFPublisher : MonoBehaviour
             Vector3 unityRelPos = baseLink.InverseTransformPoint(cameraLink.position);
             Vector3 relPos = new Vector3(-unityRelPos.z, -unityRelPos.x, unityRelPos.y);
             Quaternion unityRelRot = Quaternion.Inverse(baseLink.rotation) * cameraLink.rotation;
-            Quaternion relRot = new Quaternion(-unityRelRot.z, -unityRelRot.x, unityRelRot.y, unityRelRot.w);
+            Quaternion relRot = new Quaternion(unityRelRot.z, -unityRelRot.x, -unityRelRot.y, unityRelRot.w);
             transforms.Add(CreateTransform("base_link", "camera_link", relPos, relRot, stamp));
         }
 

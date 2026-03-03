@@ -64,7 +64,6 @@ public class LidarSensor : MonoBehaviour
         for (int i = 0; i < numRays; i++)
         {
             float angle = angleMin + i * (angleMax - angleMin) / numRays;
-            //float angle = angleMax - i * (angleMax - angleMin) / numRays;
             
 
             // 1 Direzione del raggio in Unity (locale)
@@ -78,13 +77,13 @@ public class LidarSensor : MonoBehaviour
                 distance = Mathf.Clamp(hit.distance, rangeMin, rangeMax);
             }
 
-            // 3 Converti la direzione in ROS frame (Unity → ROS mapping)
+            /* 3 Converti la direzione in ROS frame (Unity → ROS mapping)
             // Unity Z → ROS X, Unity X → ROS -Y, Unity Y → ROS Z
             Vector3 rosDir = new Vector3(
                 unityDir.z,   // ROS X
             -unityDir.x,   // ROS Y
                 unityDir.y    // ROS Z
-            );
+            );*/
 
             // 4 Assegna la distanza al LaserScan
             ranges[i] = distance; 
@@ -125,7 +124,7 @@ public class LidarSensor : MonoBehaviour
     // Visualizza i raggi nell'editor Unity (solo debug visivo)
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.green;
+        Gizmos.color = Color.red;
         for (int i = 0; i < numRays; i++)
         {
             float angle = angleMin + i * (angleMax - angleMin) / numRays;
