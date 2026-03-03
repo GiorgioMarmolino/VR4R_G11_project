@@ -57,17 +57,17 @@ public class LidarSensor : MonoBehaviour
     {
         float angleMinRad = angleMin * Mathf.Deg2Rad;
         float angleMaxRad = angleMax * Mathf.Deg2Rad;
-        float angleIncrement = (angleMaxRad - angleMinRad) / numRays;
+        float angleIncrement = (angleMaxRad - angleMinRad) / (numRays-1);
 
         float[] ranges = new float[numRays];
 
         for (int i = 0; i < numRays; i++)
         {
-            float angle = angleMin + i * (angleMax - angleMin) / numRays;
+            float angle = angleMin + i * (angleMax - angleMin) / (numRays-1);
             
-
             // 1 Direzione del raggio in Unity (locale)
-            Vector3 unityDir = Quaternion.Euler(0, -angle, 0) * Vector3.forward;
+            //Vector3 unityDir = Quaternion.Euler(0, -angle, 0) * Vector3.forward;
+            Vector3 unityDir = transform.rotation * Quaternion.Euler(0, -angle, 0) * Vector3.forward;
 
             // 2 Raycast in Unity (resta nello spazio Unity)
             RaycastHit hit;
