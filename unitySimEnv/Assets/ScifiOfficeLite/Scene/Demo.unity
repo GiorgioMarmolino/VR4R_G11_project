@@ -10497,6 +10497,7 @@ GameObject:
   - component: {fileID: 1382560041}
   - component: {fileID: 1382560040}
   - component: {fileID: 1382560039}
+  - component: {fileID: 1382560045}
   m_Layer: 0
   m_Name: mogi_bot
   m_TagString: robot
@@ -10650,6 +10651,26 @@ MonoBehaviour:
   chosenAxis: 0
   currentOrientation: 0
   collisionExceptions: []
+--- !u!114 &1382560045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382560037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 691d4b27a01c83202ababb778ad22a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  odomTopicName: /odom
+  frameId: odom
+  childFrameId: base_footprint
+  baseLink: {fileID: 966572185}
+  robotRigidbody: {fileID: 1382560040}
+  positionCovariance: 0.01
+  orientationCovariance: 0.01
+  twistCovariance: 0.001
 --- !u!1001 &1384269358
 PrefabInstance:
   m_ObjectHideFlags: 0

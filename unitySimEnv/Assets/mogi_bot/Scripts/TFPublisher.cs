@@ -30,6 +30,22 @@ public class TFPublisher : MonoBehaviour
     private Vector3 startPosition;
     private Quaternion startRotation;
 
+
+    // Helper functions =================================================================
+    // 1. Aggiungi questa helper function alla tua classe (fuori da PublishTF)
+    private Vector3 UnityToRosVector(Vector3 v)
+    {
+        // Mappatura: Unity (x,y,z) -> ROS (z, -x, y)
+        return new Vector3(v.z, -v.x, v.y);
+    }
+
+    // 2. Aggiungi questa helper function per i quaternioni
+    private Quaternion UnityToRosQuaternion(Quaternion q)
+    {
+        // Conversione standard ROS-TCP-Connector
+        return new Quaternion(q.z, -q.x, -q.y, q.w);
+    }
+    //===================================================================================
     void Start()
     {
         startPosition = baseLink.position;
@@ -47,7 +63,6 @@ public class TFPublisher : MonoBehaviour
         if (scanLink == null)
             Debug.LogError("[TFPublisher] ERRORE: Assegna scan_link nell'Inspector!");
     }
-
     void Update()
     {
         if (Time.time - lastPublishTime >= publishInterval)
@@ -56,16 +71,9 @@ public class TFPublisher : MonoBehaviour
             lastPublishTime = Time.time;
         }
     }
-
+    //===================================================================================
     void PublishTF()
     {
-        //TimeMsg stamp = new TimeMsg
-        //{
-        //    sec = (int)Time.time,
-        //    nanosec = (uint)((Time.time - Mathf.Floor(Time.time)) * 1e9)
-        //};
-        //TimeMsg stamp = ros.Now();
-
         double unixTime = (System.DateTime.UtcNow - 
                    new System.DateTime(1970, 1, 1)).TotalSeconds;
 
@@ -78,13 +86,12 @@ public class TFPublisher : MonoBehaviour
             nanosec = nanosec
         };
 
-
-        // Lista di tutte le trasformazioni da pubblicare
-        var transforms = new System.Collections.Generic.List<TransformStampedMsg>();
+        var transforms = new System.Collections.Generic.List<TransformStampedMsg>(); // Lista di tutte le trasformazioni da pubblicare
 
         // 1. map -> odom (statica, odom coincide con map in assenza di odometria reale)
-        transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
-
+        //transforms.Add(CreateTransform("map", "odom", Vector3.zero, Quaternion.identity, stamp));
+        
+        //==========================================================
         // 2. odom -> base_footprint (posizione del robot nel mondo)
         if (baseLink != null){            
             Vector3 unityPos = baseLink.position - startPosition;
@@ -109,7 +116,8 @@ public class TFPublisher : MonoBehaviour
             }
             transforms.Add(CreateTransform("odom", "base_footprint", rosPosition, rosRotation, stamp));
         }
-
+        
+        //==========================================================
         // 3. base_footprint -> base_link (offset verticale, di solito zero)
         transforms.Add(CreateTransform("base_footprint", "base_link", Vector3.zero, Quaternion.identity, stamp));
 
