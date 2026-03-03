@@ -10668,9 +10668,9 @@ MonoBehaviour:
   childFrameId: base_footprint
   baseLink: {fileID: 966572185}
   robotRigidbody: {fileID: 1382560040}
-  positionCovariance: 0.01
-  orientationCovariance: 0.01
-  twistCovariance: 0.001
+  positionCovariance: 0.1
+  orientationCovariance: 0.5
+  twistCovariance: 0.1
 --- !u!1001 &1384269358
 PrefabInstance:
   m_ObjectHideFlags: 0

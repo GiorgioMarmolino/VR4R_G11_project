@@ -14,14 +14,13 @@ public class OdometryTopicPublisher : MonoBehaviour
 
     [Header("🤖 Robot Settings")]
     [SerializeField] private Transform baseLink;
-    [SerializeField] private Rigidbody robotRigidbody;  // ← NUOVO: Riferimento al Rigidbody
+    [SerializeField] private Rigidbody robotRigidbody;
 
     [Header("📊 Covariance Settings (lower = more trust)")]
-    [SerializeField] [Range(0.0001f, 1f)] private float positionCovariance = 0.01f;
-    [SerializeField] [Range(0.0001f, 1f)] private float orientationCovariance = 0.01f;
-    [SerializeField] [Range(0.0001f, 1f)] private float twistCovariance = 0.001f; // ← NUOVO: Covarianza per twist
+    [SerializeField] [Range(0.0001f, 1f)] private float positionCovariance = 0.1f;
+    [SerializeField] [Range(0.0001f, 1f)] private float orientationCovariance = 0.5f; // più alto = slam si fida meno dell'odometria in rotazione
+    [SerializeField] [Range(0.0001f, 1f)] private float twistCovariance = 0.1f;
 
-    // Internal variables
     private ROSConnection ros;
     private Vector3 startPosition;
     private Quaternion startRotation;
@@ -31,48 +30,41 @@ public class OdometryTopicPublisher : MonoBehaviour
     {
         if (baseLink == null)
             baseLink = this.transform;
-        
-        // Auto-rileva il Rigidbody se non assegnato manualmente
+
         if (robotRigidbody == null)
             robotRigidbody = baseLink.GetComponent<Rigidbody>();
     }
 
     void Start()
     {
-        // Get ROSConnection singleton
         ros = ROSConnection.GetOrCreateInstance();
-        
+
         if (ros != null)
         {
-            // Register the topic
             ros.RegisterPublisher<OdometryMsg>(odomTopicName);
-            
-            // Save initial position as odometry zero
             startPosition = baseLink.position;
             startRotation = baseLink.rotation;
             isInitialized = true;
-            
             Debug.Log($"[OdometryPublisher] Inizializzato: pubblicando su '{odomTopicName}'");
         }
         else
         {
-            Debug.LogError("[OdometryPublisher] ROSConnection.instance non trovato! Assicurati che ROS-TCP-Connector sia configurato.");
+            Debug.LogError("[OdometryPublisher] ROSConnection non trovato!");
         }
     }
 
     void Update()
     {
         if (!isInitialized || ros == null) return;
-        
         PublishOdometry();
     }
 
     private void PublishOdometry()
     {
-        // === Calcola posa relativa (STESSA LOGICA del tuo TFPublisher) ===
+        // Calcola posa relativa
         Vector3 unityPos = baseLink.position - startPosition;
         Vector3 rosPosition = new Vector3(unityPos.z, -unityPos.x, unityPos.y);
-        
+
         Quaternion unityRot = Quaternion.Inverse(startRotation) * baseLink.rotation;
         Quaternion rosRotation = new Quaternion(
             unityRot.z,
@@ -80,7 +72,7 @@ public class OdometryTopicPublisher : MonoBehaviour
             -unityRot.y,
             unityRot.w
         );
-        
+
         // Normalizza: w deve essere positivo
         if (rosRotation.w < 0)
         {
@@ -92,116 +84,74 @@ public class OdometryTopicPublisher : MonoBehaviour
             );
         }
 
-        // === Timestamp ROS2 (STESSO METODO del tuo TFPublisher) ===
-        double unixTime = (System.DateTime.UtcNow - 
+        // Timestamp
+        double unixTime = (System.DateTime.UtcNow -
                           new System.DateTime(1970, 1, 1)).TotalSeconds;
-
         uint sec = (uint)System.Math.Floor(unixTime);
         uint nanosec = (uint)((unixTime - sec) * 1e9);
+        TimeMsg stamp = new TimeMsg { sec = (int)sec, nanosec = nanosec };
 
-        TimeMsg stamp = new TimeMsg
-        {
-            sec = (int)sec,
-            nanosec = nanosec
-        };
-
-        // === CALCOLA VELOCITÀ DAL RIGIDBODY ===
+        // Velocità dal Rigidbody
         Vector3 linearVelocity = Vector3.zero;
         Vector3 angularVelocity = Vector3.zero;
-        
+
         if (robotRigidbody != null)
         {
-            // Leggi le velocità dal Rigidbody (coordinate Unity: Y-up, Z-forward)
             linearVelocity = robotRigidbody.velocity;
             angularVelocity = robotRigidbody.angularVelocity;
         }
-        
-        // Converti velocità da Unity a ROS (Z-up, X-forward)
-        // Unity: X=Right, Y=Up, Z=Forward  →  ROS: X=Forward, Y=Left, Z=Up
-        Vector3 rosLinearVel = new Vector3(linearVelocity.z, -linearVelocity.x, linearVelocity.y);
+
+        // Converti velocità Unity -> ROS
+        Vector3 rosLinearVel  = new Vector3(linearVelocity.z,   -linearVelocity.x,   linearVelocity.y);
         Vector3 rosAngularVel = new Vector3(angularVelocity.z, -angularVelocity.x, -angularVelocity.y);
 
-        // === Costruisci messaggio Odometry ===
         var odomMsg = new OdometryMsg
         {
-            header = new HeaderMsg
-            {
-                stamp = stamp,
-                frame_id = frameId
-            },
+            header = new HeaderMsg { stamp = stamp, frame_id = frameId },
             child_frame_id = childFrameId,
-            
+
             pose = new PoseWithCovarianceMsg
             {
                 pose = new PoseMsg
                 {
-                    position = new PointMsg
-                    {
-                        x = (double)rosPosition.x,
-                        y = (double)rosPosition.y,
-                        z = (double)rosPosition.z
-                    },
-                    orientation = new QuaternionMsg
-                    {
-                        x = (double)rosRotation.x,
-                        y = (double)rosRotation.y,
-                        z = (double)rosRotation.z,
-                        w = (double)rosRotation.w
-                    }
+                    position    = new PointMsg(rosPosition.x, rosPosition.y, rosPosition.z),
+                    orientation = new QuaternionMsg(rosRotation.x, rosRotation.y, rosRotation.z, rosRotation.w)
                 },
                 covariance = BuildDiagonalCovariance(positionCovariance, orientationCovariance)
             },
-            
+
             twist = new TwistWithCovarianceMsg
             {
-                twist = new TwistMsg  // ← NUOVO: Popoliamo il twist con le velocità reali
+                twist = new TwistMsg
                 {
-                    linear = new Vector3Msg
-                    {
-                        x = (double)rosLinearVel.x,
-                        y = (double)rosLinearVel.y,
-                        z = (double)rosLinearVel.z
-                    },
-                    angular = new Vector3Msg
-                    {
-                        x = (double)rosAngularVel.x,
-                        y = (double)rosAngularVel.y,
-                        z = (double)rosAngularVel.z  // ← QUESTO ORA SEGNA LA VELOCITÀ ANGOLARE REALE!
-                    }
+                    linear  = new Vector3Msg(rosLinearVel.x,  rosLinearVel.y,  rosLinearVel.z),
+                    angular = new Vector3Msg(rosAngularVel.x, rosAngularVel.y, rosAngularVel.z)
                 },
                 covariance = BuildDiagonalCovariance(twistCovariance, twistCovariance)
             }
         };
 
-        // === Pubblica! ===
         ros.Publish(odomTopicName, odomMsg);
     }
 
-    // === Helper: Crea matrice di covarianza diagonale 6x6 (36 elementi, row-major) ===
     private double[] BuildDiagonalCovariance(float posVar, float rotVar)
     {
         var cov = new double[36];
-        
-        // Posizione (x, y, z)
-        cov[0] = posVar;   // x
-        cov[7] = posVar;   // y
+        cov[0]  = posVar;  // x
+        cov[7]  = posVar;  // y
         cov[14] = posVar;  // z
-        
-        // Rotazione (roll, pitch, yaw)
         cov[21] = rotVar;  // roll
         cov[28] = rotVar;  // pitch
-        cov[35] = rotVar;  // yaw
-        
+        cov[35] = rotVar;  // yaw ← il più importante per le rotazioni
         return cov;
     }
 
-    // === Editor Utilities (opzionale, per validazione in Unity Editor) ===
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     void OnValidate()
     {
-        positionCovariance = Mathf.Max(positionCovariance, 0.0001f);
+        positionCovariance    = Mathf.Max(positionCovariance,    0.0001f);
         orientationCovariance = Mathf.Max(orientationCovariance, 0.0001f);
-        twistCovariance = Mathf.Max(twistCovariance, 0.0001f);
+        twistCovariance       = Mathf.Max(twistCovariance,       0.0001f);
     }
-    #endif
+#endif
 }
