@@ -9,28 +9,22 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
 
-    pkg_ros2_navigation = get_package_share_directory('assignment2')
+    pkg_ros2_navigation = get_package_share_directory('vr_project')
 
     sim_time_arg = DeclareLaunchArgument(
         'use_sim_time', default_value='True',
         description='Flag to enable use_sim_time'
     )
-
-
     nav2_navigation_launch_path = os.path.join(
         get_package_share_directory('nav2_bringup'),
         'launch',
         'navigation_launch.py'
     )
-
-
     navigation_params_path = os.path.join(
-        get_package_share_directory('assignment2'),
+        get_package_share_directory('vr_project'),
         'config',
         'navigation.yaml'
     )
-
-
     navigation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(nav2_navigation_launch_path),
         launch_arguments={
@@ -40,8 +34,6 @@ def generate_launch_description():
     )
 
     launchDescriptionObject = LaunchDescription()
-
     launchDescriptionObject.add_action(sim_time_arg)
     launchDescriptionObject.add_action(navigation_launch)
-
     return launchDescriptionObject

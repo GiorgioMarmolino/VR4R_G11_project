@@ -9,33 +9,27 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
 
-    pkg_rassignment2 = get_package_share_directory('assignment2')
+    pkg_rvr_project = get_package_share_directory('vr_project')
 
     sim_time_arg = DeclareLaunchArgument(
         'use_sim_time', default_value='True',
         description='Flag to enable use_sim_time'
     )
-
     nav2_localization_launch_path = os.path.join(
         get_package_share_directory('nav2_bringup'),
         'launch',
         'localization_launch.py'
     )
-
     localization_params_path = os.path.join(
-        get_package_share_directory('assignment2'),
+        get_package_share_directory('vr_project'),
         'config',
         'amcl_localization.yaml'
     )
-
     map_file_path = os.path.join(
-        get_package_share_directory('assignment2'),
+        get_package_share_directory('vr_project'),
         'maps',
-        'map_of_world.yaml'
+        'unity_sim_env_map.yaml'
     )
-
-
-
     localization_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(nav2_localization_launch_path),
         launch_arguments={

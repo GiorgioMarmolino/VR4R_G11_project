@@ -1,3 +1,0 @@
-string marker_name
-int32 marker_id
-string waypoint
