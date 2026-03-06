@@ -1,91 +1,64 @@
 using System.Collections.Generic;
 using UnityEngine;
+// Le librerie di ROS che ora funzioneranno!
 using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.Nav;
-using RosMessageTypes.Geometry;
-
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+using RosMessageTypes.Nav; // Il tipo di messaggio (Path)
+ 
 [RequireComponent(typeof(LineRenderer))]
 public class TrajectoryEditor : MonoBehaviour
 {
-    [Header("Impostazioni")]
-    [Tooltip("Trascina qui il prefab della sferetta")]
+    [Header("Impostazioni Base")]
     public GameObject waypointPrefab;
-
-    [Tooltip("Topic ROS2 da cui ricevere il path")]
-    public string pathTopic = "/path";
-
-    // Qui salveremo tutte le sferette che generiamo
+    [Header("Impostazioni ROS")]
+    public string subscribeTopic = "/plan"; // Il topic del tuo collega!
+ 
     private List<Transform> waypoints = new List<Transform>();
     private LineRenderer lineRenderer;
-    private ROSConnection ros;
-
+ 
     void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
-
-        // Impostiamo l'estetica della linea (larga 5 cm)
         lineRenderer.startWidth = 0.05f;
         lineRenderer.endWidth = 0.05f;
-
-        // Connessione a ROS2 e sottoscrizione al topic /path
-        ros = ROSConnection.GetOrCreateInstance();
-        ros.Subscribe<PathMsg>(pathTopic, OnPathReceived);
+ 
+        // Diciamo a ROSConnection di mettersi in ascolto sul topic "/plan"
+        ROSConnection.GetOrCreateInstance().Subscribe<PathMsg>(subscribeTopic, OnTrajectoryReceived);
+        Debug.Log("In ascolto sul topic: " + subscribeTopic);
     }
-
-    // Chiamata ogni volta che arriva un messaggio sul topic /path
-    void OnPathReceived(PathMsg pathMsg)
+ 
+    // QUESTA FUNZIONE SCATTA SOLO QUANDO ARRIVA LA TRAIETTORIA DA ROS
+    void OnTrajectoryReceived(PathMsg incomingMessage)
     {
-        // Puliamo le sferette vecchie
-        foreach (Transform wp in waypoints)
+        Debug.Log("BOOM! Traiettoria ricevuta! Punti totali: " + incomingMessage.poses.Length);
+ 
+        // 1. PULIZIA: Cancelliamo le vecchie sferette se ce n'erano
+        foreach (Transform vecchiasfera in waypoints)
         {
-            Destroy(wp.gameObject);
+            Destroy(vecchiasfera.gameObject);
         }
         waypoints.Clear();
-
-        // Convertiamo ogni posa ROS in un punto Unity
-        foreach (PoseStampedMsg pose in pathMsg.poses)
+ 
+        // 2. CREAZIONE: Leggiamo i nuovi punti veri
+        foreach (var poseStamped in incomingMessage.poses)
         {
-            // ROS usa Z-forward, Unity usa Z-forward ma con Y e Z invertiti
-            // Conversione: ROS(x, y, z) -> Unity(x, z, y)
-            Vector3 pos = new Vector3(
-                (float)pose.pose.position.x,
-                (float)pose.pose.position.z,
-                (float)pose.pose.position.y
-            );
-
-            if (waypointPrefab != null)
-            {
-                GameObject newPoint = Instantiate(waypointPrefab, pos, Quaternion.identity);
-                newPoint.transform.SetParent(this.transform);
-                waypoints.Add(newPoint.transform);
-            }
-            else
-            {
-                // Se non c'è il prefab, creiamo un oggetto vuoto come placeholder
-                GameObject placeholder = new GameObject("Waypoint");
-                placeholder.transform.position = pos;
-                placeholder.transform.SetParent(this.transform);
-                waypoints.Add(placeholder.transform);
-            }
+            // MAGIA: .From<FLU>() converte le coordinate di ROS (Forward-Left-Up) in quelle di Unity!
+            Vector3 posizioneUnity = poseStamped.pose.position.From<FLU>();
+ 
+            // Creiamo la sferetta nella posizione corretta
+            GameObject newPoint = Instantiate(waypointPrefab, posizioneUnity, Quaternion.identity);
+            // Mettiamo le sferette "dentro" il TrajectoryManager per tenere pulita la Hierarchy
+            newPoint.transform.SetParent(this.transform); 
+            waypoints.Add(newPoint.transform);
         }
-
-        // Aggiorniamo subito la linea
-        UpdateLine();
-    }
-
-    void UpdateLine()
-    {
+ 
+        // Aggiorniamo il numero di punti per la linea
         lineRenderer.positionCount = waypoints.Count;
-        for (int i = 0; i < waypoints.Count; i++)
-        {
-            lineRenderer.SetPosition(i, waypoints[i].position);
-        }
     }
-
+ 
     void Update()
     {
-        // Aggiorna la linea ogni frame
-        // (utile se le sferette vengono spostate manualmente in VR)
+        // Teniamo la linea incollata alle sferette ogni frame (così se le sposti in VR la linea le segue)
         for (int i = 0; i < waypoints.Count; i++)
         {
             lineRenderer.SetPosition(i, waypoints[i].position);
