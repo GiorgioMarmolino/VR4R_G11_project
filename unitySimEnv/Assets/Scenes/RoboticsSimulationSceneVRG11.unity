@@ -385,6 +385,7 @@ GameObject:
   - component: {fileID: 55249998}
   - component: {fileID: 55249997}
   - component: {fileID: 55249996}
+  - component: {fileID: 55250001}
   m_Layer: 0
   m_Name: Right Controller
   m_TagString: Untagged
@@ -1030,6 +1031,33 @@ MonoBehaviour:
       m_Flags: 0
     m_Reference: {fileID: 0}
   m_ButtonPressPoint: 0.5
+--- !u!114 &55250001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 55249994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ef3f179d3c977499b086a27d076429b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  goalTopic: /goal_pose
+  mapFrame: map
+  floorLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  markerPrefab: {fileID: 2093148042}
+  rayLength: 10
+  rayColorValid: {r: 0, g: 1, b: 0.5, a: 1}
+  rayColorInvalid: {r: 1, g: 0.3, b: 0.3, a: 1}
+  rayWidth: 0.005
+  markerColor: {r: 0, g: 1, b: 0.5, a: 0.8}
+  markerSize: 0.3
+  hapticsAmplitude: 0.5
+  hapticsDuration: 0.1
+  robotBaseLink: {fileID: 334068822}
 --- !u!1001 &76504856
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17458,6 +17486,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 2084503035}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2093148042 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1425383010550552526, guid: 7ff30c7e7a931fa4abaacbcf858e20a1,
+    type: 3}
+  m_PrefabInstance: {fileID: 1628612153}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2093793079
 GameObject:
   m_ObjectHideFlags: 0
@@ -17621,7 +17655,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
