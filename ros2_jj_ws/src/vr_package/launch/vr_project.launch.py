@@ -57,25 +57,41 @@ def generate_launch_description():
         }.items()
     )
 
+    # 5) Multiple trajectory generator
+    trajectory_node = Node(
+        package='vr_project',
+        executable='candidate_paths.py',
+        name='path_candidates_node',
+        output='screen'
+    )
+
     # Sequenza di avvio con delays
     load_nodes = TimerAction(
         period=1.0,
         actions=[
             ros_tcp_endpoint_node,
             rviz2_cmd,
-            LogInfo(msg='[1/3] TCP Endpoint + RViz2 avviati... attendo'),
+            LogInfo(msg='[1/4] TCP Endpoint + RViz2 started...'),
 
             TimerAction(
                 period=5.0,
                 actions=[
                     localization_cmd,
-                    LogInfo(msg='[2/3] Localizzazione (AMCL) avviata... attendo'),
+                    LogInfo(msg='[2/4] Localization (AMCL) started...'),
 
                     TimerAction(
                         period=3.0,
                         actions=[
                             navigation_cmd,
-                            LogInfo(msg='[3/3] Navigazione (Nav2) avviata. Sistema pronto!'),
+                            LogInfo(msg='[3/4] Navigation (Nav2) started...'),
+
+                            # TimerAction(
+                            #     period=5.0,
+                            #     actions=[
+                            #         trajectory_node,
+                            #         LogInfo(msg='[4/4] Multiple trajectory generator started. System ready')
+                            #     ]
+                            # )
                         ]
                     )
                 ]

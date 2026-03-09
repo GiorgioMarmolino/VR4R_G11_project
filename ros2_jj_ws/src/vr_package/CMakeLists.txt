@@ -25,12 +25,16 @@ find_package(ament_index_cpp REQUIRED)
 install(DIRECTORY
   launch
   msg
-  urdf
   rviz
-  meshes
   maps
   config
   DESTINATION share/${PROJECT_NAME}
+)
+
+# Installa gli script Python
+install(PROGRAMS
+  scripts/candidate_paths.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
