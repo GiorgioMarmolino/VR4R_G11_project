@@ -3,24 +3,25 @@
 """
 candidate_paths.py
 
-Nodo ROS2 per la Shared Autonomy.
-Usa async/await per evitare conflitti con l'executor.
+Approccio: due nodi ROS2 separati nello stesso processo.
+- GoalListenerNode: ascolta /goal_pose (non viene mai bloccato)
+- PathComputerNode: calcola i path con il service (gira in thread separato)
 """
 
 import rclpy
 from rclpy.node import Node
-from rclpy.action import ActionClient
+from rclpy.executors import SingleThreadedExecutor, MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
 
 from geometry_msgs.msg import PoseStamped, Quaternion
 from nav_msgs.msg import Path
 from nav2_msgs.action import ComputePathToPose
+from rclpy.action import ActionClient
 
 import math
 import copy
-import asyncio
 import threading
+import queue
 
 
 def euler_to_quaternion(yaw: float) -> Quaternion:
@@ -49,22 +50,40 @@ def rotate_goal(goal: PoseStamped, angle_deg: float,
     return new_goal
 
 
-class PathCandidatesNode(Node):
+VARIANTS = [
+    {"name": "optimal", "angle_deg":   0.0, "dist_offset":  0.0},
+    {"name": "left",    "angle_deg": +15.0, "dist_offset": +0.3},
+    {"name": "right",   "angle_deg": -15.0, "dist_offset": -0.3},
+]
 
-    VARIANTS = [
-        {"name": "optimal", "angle_deg":   0.0, "dist_offset":  0.0},
-        {"name": "left",    "angle_deg": +15.0, "dist_offset": +0.3},
-        {"name": "right",   "angle_deg": -15.0, "dist_offset": -0.3},
-    ]
+
+class GoalListenerNode(Node):
+    """Ascolta /goal_pose e mette i goal in una coda."""
+
+    def __init__(self, goal_queue: queue.Queue):
+        super().__init__('goal_listener_node')
+        self.goal_queue = goal_queue
+
+        self.create_subscription(
+            PoseStamped, '/goal_pose', self.on_goal, 10)
+
+        self.get_logger().info('GoalListenerNode: in ascolto su /goal_pose')
+
+    def on_goal(self, msg: PoseStamped):
+        self.get_logger().info(
+            f'Goal ricevuto: x={msg.pose.position.x:.2f}, y={msg.pose.position.y:.2f}')
+        # Svuota la coda (un solo goal alla volta)
+        while not self.goal_queue.empty():
+            try: self.goal_queue.get_nowait()
+            except: pass
+        self.goal_queue.put(msg)
+
+
+class PathComputerNode(Node):
+    """Calcola i path e pubblica le traiettorie candidate."""
 
     def __init__(self):
         super().__init__('path_candidates_node')
-
-        cb = ReentrantCallbackGroup()
-
-        self.goal_sub = self.create_subscription(
-            PoseStamped, '/goal_pose', self.on_goal_received, 10,
-            callback_group=cb)
 
         self.path_pubs = []
         for i in range(3):
@@ -72,33 +91,17 @@ class PathCandidatesNode(Node):
             self.path_pubs.append(pub)
             self.get_logger().info(f'Publisher creato: /candidate_path_{i}')
 
-        self.nav2_client = ActionClient(
-            self, ComputePathToPose, 'compute_path_to_pose',
-            callback_group=cb)
+        self.path_client = ActionClient(
+            self, ComputePathToPose, '/compute_path_to_pose')
 
-        # Event loop asyncio in thread separato
-        self.loop = asyncio.new_event_loop()
-        self.loop_thread = threading.Thread(
-            target=self.loop.run_forever, daemon=True)
-        self.loop_thread.start()
-
-        self.get_logger().info('PathCandidatesNode avviato.')
-
-    def on_goal_received(self, msg: PoseStamped):
-        self.get_logger().info(
-            f'Goal ricevuto: x={msg.pose.position.x:.2f}, y={msg.pose.position.y:.2f}')
-        # Lancia il calcolo nell'event loop asyncio separato
-        asyncio.run_coroutine_threadsafe(
-            self.compute_all_paths_async(msg), self.loop)
-
-    async def compute_all_paths_async(self, goal: PoseStamped):
-        if not self.nav2_client.wait_for_server(timeout_sec=5.0):
-            self.get_logger().error('Nav2 non disponibile!')
+    def compute_all(self, goal: PoseStamped):
+        if not self.path_client.wait_for_server(timeout_sec=5.0):
+            self.get_logger().error('Action /compute_path_to_pose non disponibile!')
             return
 
-        for i, variant in enumerate(self.VARIANTS):
+        for i, variant in enumerate(VARIANTS):
             modified = rotate_goal(goal, variant["angle_deg"], variant["dist_offset"])
-            path = await self.compute_path_async(modified, variant["name"])
+            path = self.call_service_sync(modified, variant["name"])
 
             if path and len(path.poses) > 0:
                 self.path_pubs[i].publish(path)
@@ -108,54 +111,85 @@ class PathCandidatesNode(Node):
                 self.get_logger().warn(f'Path {i} ({variant["name"]}): fallito.')
                 empty = Path()
                 empty.header.frame_id = 'map'
-                empty.header.stamp    = self.get_clock().now().to_msg()
+                empty.header.stamp = self.get_clock().now().to_msg()
                 self.path_pubs[i].publish(empty)
 
         self.get_logger().info('Calcolo completato.')
 
-    async def compute_path_async(self, goal_pose: PoseStamped, name: str):
-        """Chiama Nav2 in modo asincrono senza bloccare il subscriber."""
+    def call_service_sync(self, goal_pose: PoseStamped, name: str):
+        """Chiamata sincrona all'action client."""
         goal_msg            = ComputePathToPose.Goal()
         goal_msg.goal       = goal_pose
         goal_msg.planner_id = ''
         goal_msg.use_start  = False
 
-        # Converti il future ROS in awaitable asyncio
-        loop = asyncio.get_event_loop()
+        # Invia goal e aspetta accettazione
+        future = self.path_client.send_goal_async(goal_msg)
+        rclpy.spin_until_future_complete(self, future, timeout_sec=10.0)
 
-        send_future = self.nav2_client.send_goal_async(goal_msg)
-        goal_handle = await asyncio.wait_for(
-            loop.run_in_executor(None, send_future.result), timeout=10.0)
+        if not future.done():
+            self.get_logger().error(f'Timeout invio goal {name}')
+            return None
 
-        if goal_handle is None or not goal_handle.accepted:
+        goal_handle = future.result()
+        if not goal_handle.accepted:
             self.get_logger().error(f'Goal {name} rifiutato')
             return None
 
+        # Aspetta risultato
         result_future = goal_handle.get_result_async()
-        result = await asyncio.wait_for(
-            loop.run_in_executor(None, result_future.result), timeout=10.0)
+        rclpy.spin_until_future_complete(self, result_future, timeout_sec=10.0)
 
-        if result is None:
+        if not result_future.done():
+            self.get_logger().error(f'Timeout risultato {name}')
             return None
 
-        return result.result.path
+        return result_future.result().result.path
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PathCandidatesNode()
 
-    executor = MultiThreadedExecutor(num_threads=4)
-    executor.add_node(node)
+    goal_queue = queue.Queue()
+
+    # Nodo listener — gira nel thread principale
+    listener = GoalListenerNode(goal_queue)
+
+    # Nodo computer — gira in un thread separato con suo executor
+    computer = PathComputerNode()
+    computer_executor = SingleThreadedExecutor()
+    computer_executor.add_node(computer)
+
+    computer_thread = threading.Thread(
+        target=computer_executor.spin, daemon=True)
+    computer_thread.start()
+
+    # Executor principale per il listener
+    listener_executor = SingleThreadedExecutor()
+    listener_executor.add_node(listener)
+
+    listener.get_logger().info('Sistema avviato. In attesa di goal...')
 
     try:
-        executor.spin()
+        while rclpy.ok():
+            # Spin listener per ricevere goal
+            listener_executor.spin_once(timeout_sec=0.1)
+
+            # Controlla se c'è un nuovo goal da processare
+            try:
+                goal = goal_queue.get_nowait()
+                computer.get_logger().info('Calcolo traiettorie...')
+                computer.compute_all(goal)
+            except queue.Empty:
+                pass
+
     except KeyboardInterrupt:
         pass
     finally:
-        node.loop.call_soon_threadsafe(node.loop.stop)
-        node.loop_thread.join()
-        node.destroy_node()
+        listener_executor.shutdown()
+        computer_executor.shutdown()
+        listener.destroy_node()
+        computer.destroy_node()
         rclpy.shutdown()
 
 
