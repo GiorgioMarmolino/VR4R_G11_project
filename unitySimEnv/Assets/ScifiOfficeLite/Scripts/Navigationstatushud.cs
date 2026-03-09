@@ -72,25 +72,11 @@ public class NavigationStatusHUD : MonoBehaviour
         InvokeRepeating("CheckROSConnection", 0.5f, 0.5f);
     }
 
-    // ── Controlla connessione tramite stato interno ROSConnection ────────────
+    // ── Controlla connessione tramite ROSConnectionMonitor ───────────────────
     void CheckROSConnection()
     {
         bool wasConnected = rosConnected;
-        bool tcpConnected = false;
-
-        try
-        {
-            var ros = ROSConnection.GetOrCreateInstance();
-            // Legge il campo privato che indica se il thread TCP è attivo
-            var field = ros.GetType().GetField("m_HasConnectionThread",
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                tcpConnected = (bool)field.GetValue(ros);
-        }
-        catch { tcpConnected = false; }
-
-        rosConnected = tcpConnected;
+        rosConnected = ROSConnectionMonitor.IsConnected;
 
         if (!rosConnected)
         {

@@ -4713,8 +4713,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4c6d9f2489f3d3099d4b1394c5aa36c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rosIP: 127.0.0.1
-  rosPort: 10000
+  rosTimeoutSecs: 3
   navStatusText: {fileID: 545702979}
   distanceToGoalText: {fileID: 755697845}
   etaText: {fileID: 792426901}
@@ -8011,6 +8010,51 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 853909680}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &861206083
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 861206084}
+  - component: {fileID: 861206085}
+  m_Layer: 0
+  m_Name: ROS CON Monitor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &861206084
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 861206083}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.5846953, y: 1.6936839, z: 31.946629}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &861206085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 861206083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcdf84eefc3969a919322d77888f3034, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeoutSecs: 120
 --- !u!1001 &862940941
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19360,3 +19404,4 @@ SceneRoots:
   - {fileID: 1335500202}
   - {fileID: 274887831}
   - {fileID: 1181615203}
+  - {fileID: 861206084}
