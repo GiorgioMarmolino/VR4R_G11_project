@@ -43,7 +43,10 @@ public class LidarARVisualizer : MonoBehaviour
 
     void InitializePoints()
     {
-        pointMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) shader = Shader.Find("Unlit/Color");
+        if (shader == null) shader = Shader.Find("Standard");
+        pointMaterial = new Material(shader);
 
         pointObjects   = new GameObject[maxPoints];
         pointRenderers = new Renderer[maxPoints];

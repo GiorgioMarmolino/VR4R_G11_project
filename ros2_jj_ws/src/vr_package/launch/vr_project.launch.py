@@ -85,13 +85,13 @@ def generate_launch_description():
                             navigation_cmd,
                             LogInfo(msg='[3/4] Navigation (Nav2) started...'),
 
-                            # TimerAction(
-                            #     period=5.0,
-                            #     actions=[
-                            #         trajectory_node,
-                            #         LogInfo(msg='[4/4] Multiple trajectory generator started. System ready')
-                            #     ]
-                            # )
+                            TimerAction(
+                                period=5.0,
+                                actions=[
+                                    trajectory_node,
+                                    LogInfo(msg='[4/4] Multiple trajectory generator started. System ready')
+                                ]
+                            )
                         ]
                     )
                 ]

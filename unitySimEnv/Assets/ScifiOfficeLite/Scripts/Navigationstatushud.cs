@@ -66,7 +66,7 @@ public class NavigationStatusHUD : MonoBehaviour
         ros.Subscribe<OdometryMsg>("/odom", OnOdomReceived);
         ros.Subscribe<LaserScanMsg>("/scan", OnScanReceived);
         ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
-        ros.Subscribe<PoseStampedMsg>("/amcl_pose", OnAmclReceived);
+        ros.Subscribe<RosMessageTypes.Geometry.PoseWithCovarianceStampedMsg>("/amcl_pose", OnAmclReceived);
 
         InvokeRepeating("UpdateFrequencies", 1f, 0.5f);
         InvokeRepeating("CheckROSConnection", 0.5f, 0.5f);
@@ -144,7 +144,7 @@ public class NavigationStatusHUD : MonoBehaviour
         navStatus   = "NAVIGATING";
     }
 
-    void OnAmclReceived(PoseStampedMsg msg)
+    void OnAmclReceived(RosMessageTypes.Geometry.PoseWithCovarianceStampedMsg msg)
     {
         if (!rosConnected) return;
         rxFlashTime = Time.time;

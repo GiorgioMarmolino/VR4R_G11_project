@@ -1,18 +1,13 @@
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Nav;
+using RosMessageTypes.Geometry;
 using System.Collections.Generic;
 
 /// <summary>
 /// Visualizza le 3 traiettorie candidate in Unity come LineRenderer 3D.
-/// 
-/// Riceve i path da:
-///   /candidate_path_0 → traiettoria ottimale (verde)
-///   /candidate_path_1 → traiettoria sinistra (blu)
-///   /candidate_path_2 → traiettoria destra   (arancione)
-/// 
-/// Converte le coordinate ROS → Unity e disegna le linee sul pavimento.
-/// Va attaccato a un GameObject vuoto nella scena.
+/// - Le traiettorie vengono cancellate quando il robot raggiunge il goal
+/// - Quando arriva un nuovo goal, le vecchie vengono sostituite
 /// </summary>
 public class CandidatePathVisualizer : MonoBehaviour
 {
@@ -22,35 +17,42 @@ public class CandidatePathVisualizer : MonoBehaviour
     public string path2Topic = "/candidate_path_2";
 
     [Header("Riferimento Robot")]
-    [Tooltip("Trascina qui base_link — serve per la conversione coordinate ROS → Unity")]
+    [Tooltip("Trascina qui base_link")]
     public Transform robotBaseLink;
 
     [Header("Colori Traiettorie")]
-    public Color colorPath0 = new Color(0f,   1f,   0.3f, 1f); // verde  — ottimale
-    public Color colorPath1 = new Color(0.2f, 0.5f, 1f,   1f); // blu    — sinistra
-    public Color colorPath2 = new Color(1f,   0.6f, 0f,   1f); // arancione — destra
+    public Color colorPath0 = new Color(0f,   1f,   0.3f, 1f); // verde
+    public Color colorPath1 = new Color(0.2f, 0.5f, 1f,   1f); // blu
+    public Color colorPath2 = new Color(1f,   0.6f, 0f,   1f); // arancione
 
     [Header("Impostazioni Linea")]
-    public float lineWidth       = 0.05f;
-    public float lineHeightOffset = 0.05f; // altezza dal pavimento
+    public float lineWidth        = 0.05f;
+    public float lineHeightOffset = 0.05f;
 
     [Header("Traiettoria Selezionata")]
-    public Color colorSelected    = new Color(1f, 1f, 0f, 1f); // giallo — selezionata
-    public float selectedWidth    = 0.1f;
-    public int   selectedPathIndex = -1; // -1 = nessuna selezionata
+    public Color colorSelected   = new Color(1f, 1f, 0f, 1f);
+    public float selectedWidth   = 0.1f;
+    public int   selectedPathIndex = -1;
 
-    // LineRenderer per ogni traiettoria
+    [Header("Rilevamento Goal Raggiunto")]
+    public float goalReachedThreshold = 0.4f;
+
+    // LineRenderer
     private LineRenderer[] lineRenderers = new LineRenderer[3];
     private Color[]        pathColors;
-    private bool[]         pathReceived  = new bool[3];
 
-    // Posizione iniziale del robot (offset ROS → Unity)
-    private Vector3 startPosition;
+    // Offset coordinate
+    private Vector3 startPosition    = Vector3.zero;
     private bool    startPositionSet = false;
+
+    // Stato goal
+    private Vector2 robotPos    = Vector2.zero;
+    private Vector2 currentGoal = Vector2.zero;
+    private bool    hasGoal     = false;
+    private int     pathsReceived = 0;
 
     void Start()
     {
-        // Salva posizione iniziale
         if (robotBaseLink != null)
         {
             startPosition    = robotBaseLink.position;
@@ -58,22 +60,24 @@ public class CandidatePathVisualizer : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[CandidatePathVisualizer] robotBaseLink non assegnato!");
+            startPosition    = Vector3.zero;
+            startPositionSet = true;
+            Debug.LogWarning("[CandidatePathVisualizer] robotBaseLink non assegnato — uso Vector3.zero.");
         }
 
         pathColors = new Color[] { colorPath0, colorPath1, colorPath2 };
 
-        // Crea i 3 LineRenderer
         for (int i = 0; i < 3; i++)
             CreateLineRenderer(i);
 
-        // Sottoscrivi ai topic
         var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<PathMsg>(path0Topic, msg => OnPathReceived(msg, 0));
         ros.Subscribe<PathMsg>(path1Topic, msg => OnPathReceived(msg, 1));
         ros.Subscribe<PathMsg>(path2Topic, msg => OnPathReceived(msg, 2));
+        ros.Subscribe<OdometryMsg>("/odom", OnOdomReceived);
+        ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
 
-        Debug.Log("[CandidatePathVisualizer] In ascolto sui topic candidate path.");
+        Debug.Log("[CandidatePathVisualizer] Pronto.");
     }
 
     void CreateLineRenderer(int index)
@@ -83,62 +87,68 @@ public class CandidatePathVisualizer : MonoBehaviour
 
         LineRenderer lr = obj.AddComponent<LineRenderer>();
 
-        Shader urpShader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (urpShader == null) urpShader = Shader.Find("Sprites/Default");
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) shader = Shader.Find("Sprites/Default");
 
-        Material mat = new Material(urpShader);
-        mat.color = pathColors[index];
-
-        lr.material        = mat;
-        lr.startWidth      = lineWidth;
-        lr.endWidth        = lineWidth;
-        lr.useWorldSpace   = true;
-        lr.positionCount   = 0;
-        lr.numCapVertices  = 4;
+        lr.material          = new Material(shader);
+        lr.material.color    = pathColors[index];
+        lr.startWidth        = lineWidth;
+        lr.endWidth          = lineWidth;
+        lr.useWorldSpace     = true;
+        lr.positionCount     = 0;
+        lr.numCapVertices    = 4;
         lr.numCornerVertices = 4;
-
-        // Gradiente colore lungo la linea
-        Gradient gradient = new Gradient();
-        gradient.SetKeys(
-            new GradientColorKey[]
-            {
-                new GradientColorKey(pathColors[index], 0f),
-                new GradientColorKey(pathColors[index], 1f)
-            },
-            new GradientAlphaKey[]
-            {
-                new GradientAlphaKey(0.5f, 0f),
-                new GradientAlphaKey(1f,   1f)
-            }
-        );
-        lr.colorGradient = gradient;
 
         lineRenderers[index] = lr;
     }
 
+    void OnGoalReceived(PoseStampedMsg msg)
+    {
+        currentGoal = new Vector2(
+            (float)msg.pose.position.x,
+            (float)msg.pose.position.y
+        );
+        hasGoal       = true;
+        pathsReceived = 0;
+        selectedPathIndex = -1;
+
+        // Non nascondere subito — le nuove traiettorie sovrascriveranno quelle vecchie
+        Debug.Log($"[CandidatePathVisualizer] Nuovo goal: x={currentGoal.x:F2}, y={currentGoal.y:F2}");
+    }
+
+    void OnOdomReceived(OdometryMsg msg)
+    {
+        robotPos = new Vector2(
+            (float)msg.pose.pose.position.x,
+            (float)msg.pose.pose.position.y
+        );
+
+        // Controlla se il robot ha raggiunto il goal
+        if (hasGoal && Vector2.Distance(robotPos, currentGoal) < goalReachedThreshold)
+        {
+            hasGoal = false;
+            HideAllPaths();
+            Debug.Log("[CandidatePathVisualizer] Goal raggiunto — traiettorie cancellate.");
+        }
+    }
+
     void OnPathReceived(PathMsg msg, int index)
     {
-        if (!startPositionSet) return;
-
-        pathReceived[index] = true;
+        Debug.Log($"[CandidatePathVisualizer] Path {index}: {msg.poses.Length} pose ricevute.");
 
         if (msg.poses.Length == 0)
         {
-            // Path vuoto — nascondi la linea
             lineRenderers[index].positionCount = 0;
-            Debug.LogWarning($"[CandidatePathVisualizer] Path {index} vuoto.");
             return;
         }
 
-        // Converti pose ROS → Unity
+        // Converti ROS → Unity
         List<Vector3> points = new List<Vector3>();
         foreach (var poseStamped in msg.poses)
         {
             float rosX = (float)poseStamped.pose.position.x;
             float rosY = (float)poseStamped.pose.position.y;
 
-            // ROS: x=avanti, y=sinistra → Unity: z=avanti, x=-y_ros
-            // Applica offset startPosition per allineare con la scena Unity
             Vector3 unityPos = new Vector3(
                 startPosition.x - rosY,
                 startPosition.y + lineHeightOffset,
@@ -147,13 +157,10 @@ public class CandidatePathVisualizer : MonoBehaviour
             points.Add(unityPos);
         }
 
-        // Aggiorna LineRenderer
         lineRenderers[index].positionCount = points.Count;
         lineRenderers[index].SetPositions(points.ToArray());
 
-        Debug.Log($"[CandidatePathVisualizer] Path {index}: {points.Count} punti disegnati.");
-
-        // Aggiorna stile visivo
+        pathsReceived++;
         UpdatePathStyles();
     }
 
@@ -164,36 +171,12 @@ public class CandidatePathVisualizer : MonoBehaviour
             if (lineRenderers[i] == null) continue;
 
             bool isSelected = (i == selectedPathIndex);
-
-            float width = isSelected ? selectedWidth : lineWidth;
-            lineRenderers[i].startWidth = width;
-            lineRenderers[i].endWidth   = width;
-
-            Color col = isSelected ? colorSelected : pathColors[i];
-            lineRenderers[i].material.color = col;
-
-            // Gradiente con alpha piena se selezionata
-            Gradient gradient = new Gradient();
-            gradient.SetKeys(
-                new GradientColorKey[]
-                {
-                    new GradientColorKey(col, 0f),
-                    new GradientColorKey(col, 1f)
-                },
-                new GradientAlphaKey[]
-                {
-                    new GradientAlphaKey(isSelected ? 1f : 0.5f, 0f),
-                    new GradientAlphaKey(1f, 1f)
-                }
-            );
-            lineRenderers[i].colorGradient = gradient;
+            lineRenderers[i].startWidth      = isSelected ? selectedWidth : lineWidth;
+            lineRenderers[i].endWidth        = isSelected ? selectedWidth : lineWidth;
+            lineRenderers[i].material.color  = isSelected ? colorSelected : pathColors[i];
         }
     }
 
-    /// <summary>
-    /// Seleziona una traiettoria (0, 1, 2) o deseleziona (-1).
-    /// Chiamato da PathSelector.cs
-    /// </summary>
     public void SelectPath(int index)
     {
         selectedPathIndex = index;
@@ -201,10 +184,6 @@ public class CandidatePathVisualizer : MonoBehaviour
         Debug.Log($"[CandidatePathVisualizer] Traiettoria {index} selezionata.");
     }
 
-    /// <summary>
-    /// Restituisce i punti della traiettoria selezionata in coordinate Unity.
-    /// Usato da PathEditor.cs per la modifica.
-    /// </summary>
     public Vector3[] GetSelectedPathPoints()
     {
         if (selectedPathIndex < 0 || selectedPathIndex > 2) return null;
@@ -216,15 +195,11 @@ public class CandidatePathVisualizer : MonoBehaviour
         return points;
     }
 
-    /// <summary>
-    /// Nasconde tutte le traiettorie — chiamato dopo la conferma.
-    /// </summary>
     public void HideAllPaths()
     {
         foreach (var lr in lineRenderers)
             if (lr != null) lr.positionCount = 0;
         selectedPathIndex = -1;
-        Debug.Log("[CandidatePathVisualizer] Traiettorie nascoste.");
     }
 
     void OnDisable()
