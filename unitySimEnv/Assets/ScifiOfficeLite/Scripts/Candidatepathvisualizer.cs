@@ -177,6 +177,30 @@ public class CandidatePathVisualizer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Imposta il colore di un path specifico — usato da PathSelector per hover/select.
+    /// </summary>
+    public void SetPathColor(int index, Color color)
+    {
+        if (index < 0 || index > 2) return;
+        if (lineRenderers[index] == null) return;
+        lineRenderers[index].material.color = color;
+    }
+
+    /// <summary>
+    /// Restituisce i punti 3D di un path specifico in coordinate Unity.
+    /// Usato da PathSelector per il ray casting.
+    /// </summary>
+    public Vector3[] GetPathPoints(int index)
+    {
+        if (index < 0 || index > 2) return null;
+        LineRenderer lr = lineRenderers[index];
+        if (lr == null || lr.positionCount == 0) return null;
+        Vector3[] points = new Vector3[lr.positionCount];
+        lr.GetPositions(points);
+        return points;
+    }
+
     public void SelectPath(int index)
     {
         selectedPathIndex = index;

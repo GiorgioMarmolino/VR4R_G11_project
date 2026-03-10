@@ -172,13 +172,10 @@ def main(args=None):
 
     try:
         while rclpy.ok():
-            # Spin listener per ricevere goal
             listener_executor.spin_once(timeout_sec=0.1)
-
-            # Controlla se c'è un nuovo goal da processare
             try:
                 goal = goal_queue.get_nowait()
-                computer.get_logger().info('Calcolo traiettorie...')
+                computer.get_logger().info('Computing possible trajectories...')
                 computer.compute_all(goal)
             except queue.Empty:
                 pass
