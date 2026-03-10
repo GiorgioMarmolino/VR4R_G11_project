@@ -58,38 +58,52 @@ def generate_launch_description():
     )
 
     # 5) Multiple trajectory generator
-    trajectory_node = Node(
+    trajectory_cmd = Node(
         package='vr_project',
         executable='candidate_paths.py',
         name='path_candidates_node',
         output='screen'
     )
 
-    # Sequenza di avvio con delays
+    # 6) PathFollower
+    pathFollower_cmd = Node(
+        package='vr_project',
+        executable='path_follower_node.py',
+        name='path_follower_node',
+        output='screen'
+    )
     load_nodes = TimerAction(
         period=1.0,
         actions=[
             ros_tcp_endpoint_node,
             rviz2_cmd,
-            LogInfo(msg='[1/4] TCP Endpoint + RViz2 started...'),
+            LogInfo(msg='[1/5] TCP Endpoint + RViz2 started...'),
 
             TimerAction(
                 period=5.0,
                 actions=[
                     localization_cmd,
-                    LogInfo(msg='[2/4] Localization (AMCL) started...'),
+                    LogInfo(msg='[2/5] Localization (AMCL) started...'),
 
                     TimerAction(
                         period=3.0,
                         actions=[
                             navigation_cmd,
-                            LogInfo(msg='[3/4] Navigation (Nav2) started...'),
+                            LogInfo(msg='[3/5] Navigation (Nav2) started...'),
 
                             TimerAction(
                                 period=5.0,
                                 actions=[
-                                    trajectory_node,
-                                    LogInfo(msg='[4/4] Multiple trajectory generator started. System ready')
+                                    trajectory_cmd,
+                                    pathFollower_cmd,
+                                    LogInfo(msg='[4/5] Trajectory generator + Path follower started...'),
+
+                                    TimerAction(
+                                        period=2.0,
+                                        actions=[
+                                            LogInfo(msg='[5/5] System ready!')
+                                        ]
+                                    )
                                 ]
                             )
                         ]

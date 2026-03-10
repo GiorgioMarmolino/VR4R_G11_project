@@ -34,6 +34,7 @@ install(DIRECTORY
 # Installa gli script Python
 install(PROGRAMS
   scripts/candidate_paths.py
+  scripts/pathFollower.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
