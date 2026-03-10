@@ -4102,6 +4102,7 @@ GameObject:
   - component: {fileID: 441854648}
   - component: {fileID: 441854647}
   - component: {fileID: 441854649}
+  - component: {fileID: 441854650}
   m_Layer: 0
   m_Name: PathVisualizer
   m_TagString: Untagged
@@ -4169,6 +4170,34 @@ MonoBehaviour:
   hoverColor: {r: 1, g: 1, b: 0, a: 1}
   selectedColor: {r: 0, g: 1, b: 1, a: 1}
   isActive: 1
+--- !u!114 &441854650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 441854646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15984b6e960fa6be889b59ca16dc5441, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pathVisualizer: {fileID: 441854647}
+  pathSelector: {fileID: 441854649}
+  rightController: {fileID: 55249995}
+  mainCamera: {fileID: 2093793083}
+  waypointCount: 10
+  waypointRadius: 0.15
+  waypointColor: {r: 1, g: 0, b: 0.8302622, a: 1}
+  waypointHoverColor: {r: 1, g: 1, b: 0, a: 1}
+  waypointGrabbedColor: {r: 0, g: 0.083981514, b: 1, a: 1}
+  grabRadius: 0.4
+  floorY: 0
+  waypointHeight: 0.05
+  editedPathColor: {r: 1, g: 0.5, b: 0, a: 1}
+  editedPathWidth: 0.08
+  confirmKey: 13
+  cancelKey: 27
 --- !u!1001 &441980398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14805,50 +14834,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1655251874}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1661154984
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1661154986}
-  - component: {fileID: 1661154985}
-  m_Layer: 0
-  m_Name: CameraController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &1661154985
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1661154984}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d7988dae8aa3e9689f94ab41e36231b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &1661154986
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1661154984}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5.681909, y: 1.6254612, z: 31.988438}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1666335755
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20005,5 +19990,4 @@ SceneRoots:
   - {fileID: 1181615203}
   - {fileID: 861206084}
   - {fileID: 918877570}
-  - {fileID: 1661154986}
   - {fileID: 441854648}
