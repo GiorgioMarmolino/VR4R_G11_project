@@ -16,7 +16,12 @@ public class CandidatePathVisualizer : MonoBehaviour
     public string path1Topic = "/candidate_path_1";
     public string path2Topic = "/candidate_path_2";
 
-    [Header("Riferimento Robot")]
+    [Header("Riferimenti")]
+    [Tooltip("Trascina qui PathEditor")]
+    public PathEditor pathEditor;
+    [Tooltip("Trascina qui PathSelector")]
+    public PathSelector pathSelector;
+
     [Tooltip("Trascina qui base_link")]
     public Transform robotBaseLink;
 
@@ -108,12 +113,25 @@ public class CandidatePathVisualizer : MonoBehaviour
             (float)msg.pose.position.x,
             (float)msg.pose.position.y
         );
-        hasGoal       = true;
-        pathsReceived = 0;
+        hasGoal           = true;
+        pathsReceived     = 0;
         selectedPathIndex = -1;
+        frozen            = false;
 
-        // Non nascondere subito — le nuove traiettorie sovrascriveranno quelle vecchie
-        Debug.Log($"[CandidatePathVisualizer] Nuovo goal: x={currentGoal.x:F2}, y={currentGoal.y:F2}");
+        // Reset completo — linea editata, waypoint, selector
+        if (pathEditor != null)
+        {
+            pathEditor.Deactivate();      // distrugge sfere e linea editata
+        }
+        if (pathSelector != null)
+        {
+            pathSelector.Activate();      // riattiva il selector
+        }
+
+        HideAllPaths();
+        Debug.Log($"[CandidatePathVisualizer] Nuovo goal — reset completo.");
+        Debug.Log($"[CPV] OnGoalReceived! pathEditor={pathEditor != null}, pathSelector={pathSelector != null}");
+        Debug.Log($"[CPV] frozen={frozen}, hasGoal={hasGoal}");
     }
 
     void OnOdomReceived(OdometryMsg msg)
@@ -126,14 +144,24 @@ public class CandidatePathVisualizer : MonoBehaviour
         // Controlla se il robot ha raggiunto il goal
         if (hasGoal && Vector2.Distance(robotPos, currentGoal) < goalReachedThreshold)
         {
-            hasGoal = false;
+            hasGoal           = false;
+            frozen            = false;
+            selectedPathIndex = -1;
+
+            if (pathEditor   != null) pathEditor.Deactivate();
+            if (pathSelector != null) pathSelector.Activate();
             HideAllPaths();
-            Debug.Log("[CandidatePathVisualizer] Goal raggiunto — traiettorie cancellate.");
+
+            Debug.Log("[CandidatePathVisualizer] Goal raggiunto — reset completo.");
         }
     }
 
+    // Flag per bloccare aggiornamenti dal topic durante editing/esecuzione
+    private bool frozen = false;
+
     void OnPathReceived(PathMsg msg, int index)
     {
+        if (frozen) return; // ignora aggiornamenti dal topic
         Debug.Log($"[CandidatePathVisualizer] Path {index}: {msg.poses.Length} pose ricevute.");
 
         if (msg.poses.Length == 0)
@@ -218,6 +246,24 @@ public class CandidatePathVisualizer : MonoBehaviour
         lr.GetPositions(points);
         return points;
     }
+
+    /// <summary>Setta il goal dal path editato — serve per rilevare quando viene raggiunto.</summary>
+    public void SetEditedGoal(Vector3 lastWaypointUnity)
+    {
+        // Converti da Unity → ROS per confronto con odom
+        currentGoal = new Vector2(
+            lastWaypointUnity.z - startPosition.z,
+            -(lastWaypointUnity.x - startPosition.x)
+        );
+        hasGoal = true;
+        Debug.Log($"[CandidatePathVisualizer] Goal editato settato: ros x={currentGoal.x:F2}, y={currentGoal.y:F2}");
+    }
+
+    /// <summary>Blocca aggiornamenti dal topic — chiamato da PathEditor alla conferma.</summary>
+    public void Freeze() { frozen = true; }
+
+    /// <summary>Riprende aggiornamenti dal topic — chiamato dopo l'esecuzione.</summary>
+    public void Unfreeze() { frozen = false; HideAllPaths(); }
 
     public void HideAllPaths()
     {

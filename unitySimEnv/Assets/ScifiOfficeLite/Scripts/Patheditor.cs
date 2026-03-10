@@ -102,8 +102,8 @@ public class PathEditor : MonoBehaviour
     {
         // Path selezionato — aspetta che l'utente decida se modificare
         // L'attivazione avviene tramite Activate() chiamato da SelectionUIHUD
-        Activate(); // test temporaneo
         Debug.Log($"[PathEditor] Path {index} selezionato, pronto per modifica.");
+        Activate();
     }
 
     /// <summary>
@@ -111,34 +111,34 @@ public class PathEditor : MonoBehaviour
     /// Chiamato da SelectionUIHUD quando l'utente sceglie "Modifica".
     /// </summary>
     public void Activate()
-{
-    int selectedIndex = pathVisualizer.selectedPathIndex;
-    Debug.Log($"[PathEditor] Activate() selectedIndex={selectedIndex}");
-
-    Vector3[] pathPoints = pathVisualizer.GetSelectedPathPoints();
-    Debug.Log($"[PathEditor] pathPoints={pathPoints?.Length ?? 0}");
-
-    if (selectedIndex < 0)
     {
-        Debug.LogWarning("[PathEditor] Nessun path selezionato!");
-        return;
+        Debug.Log("[PathSelector] Activate() chiamato!");
+        int selectedIndex = pathVisualizer.selectedPathIndex;
+        if (selectedIndex < 0)
+        {
+            Debug.LogWarning("[PathEditor] Nessun path selezionato!");
+            return;
+        }
+
+        Vector3[] pathPoints = pathVisualizer.GetSelectedPathPoints();
+        if (pathPoints == null || pathPoints.Length == 0)
+        {
+            Debug.LogWarning("[PathEditor] Path selezionato vuoto!");
+            return;
+        }
+
+        IsActive = true;
+        if (pathSelector != null) pathSelector.Deactivate();
+
+        // Crea i waypoint equidistanti lungo il path
+        CreateWaypoints(pathPoints);
+
+        // Mostra il path editato
+        editedLineRenderer.enabled = true;
+        UpdateEditedPath();
+
+        Debug.Log($"[PathEditor] Editor attivo su path {selectedIndex} con {waypointCount} waypoint.");
     }
-
-    if (pathPoints == null || pathPoints.Length == 0)
-    {
-        Debug.LogWarning("[PathEditor] Path selezionato vuoto!");
-        return;
-    }
-
-    IsActive = true;
-    if (pathSelector != null) pathSelector.Deactivate();
-
-    CreateWaypoints(pathPoints);
-    editedLineRenderer.enabled = true;
-    UpdateEditedPath();
-
-    Debug.Log($"[PathEditor] Editor attivo con {waypointCount} waypoint.");
-}
 
     void CreateWaypoints(Vector3[] pathPoints)
     {
@@ -380,15 +380,39 @@ public class PathEditor : MonoBehaviour
     public void ConfirmPath()
     {
         Debug.Log("[PathEditor] Path confermato!");
+        // Nascondi le 3 candidate ma mantieni linea editata visibile
+        pathVisualizer.HideAllPaths();
+        pathVisualizer.Freeze();
+        // Notifica goal all'ultimo waypoint — serve per rilevare goal raggiunto
+        if (pathVisualizer != null && waypointPositions != null && waypointPositions.Length > 0)
+            pathVisualizer.SetEditedGoal(waypointPositions[waypointPositions.Length - 1]);
         OnPathConfirmed?.Invoke(waypointPositions);
-        Deactivate();
+        DeactivateKeepLine();
+    }
+
+    void DeactivateKeepLine()
+    {
+        IsActive = false;
+        DestroyWaypoints();
+        // NON disabilitiamo editedLineRenderer — rimane visibile
+        // PathSelector rimane disattivo finché non arriva nuovo goal
     }
 
     public void CancelEdit()
     {
         Debug.Log("[PathEditor] Modifica annullata.");
+        if (pathVisualizer != null) pathVisualizer.Unfreeze();
         OnEditCancelled?.Invoke();
         Deactivate();
+    }
+
+    /// <summary>Nasconde la linea editata — chiamato da PathExecutor dopo l'esecuzione.</summary>
+    public void HideEditedPath()
+    {
+        editedLineRenderer.enabled       = false;
+        editedLineRenderer.positionCount = 0;
+        if (pathVisualizer != null) pathVisualizer.Unfreeze();
+        if (pathSelector   != null) pathSelector.Activate();
     }
 
     public void Deactivate()
@@ -398,6 +422,7 @@ public class PathEditor : MonoBehaviour
         editedLineRenderer.enabled = false;
         editedLineRenderer.positionCount = 0;
         if (pathSelector != null) pathSelector.Activate();
+        Debug.Log("[PathEditor] Deactivate() chiamato!");
     }
 
     void DestroyWaypoints()
@@ -410,4 +435,3 @@ public class PathEditor : MonoBehaviour
 
     void OnDestroy() => DestroyWaypoints();
 }
-//

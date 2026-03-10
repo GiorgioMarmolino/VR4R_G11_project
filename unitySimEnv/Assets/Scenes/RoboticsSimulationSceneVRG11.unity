@@ -4125,6 +4125,8 @@ MonoBehaviour:
   path0Topic: /candidate_path_0
   path1Topic: /candidate_path_1
   path2Topic: /candidate_path_2
+  pathEditor: {fileID: 441854650}
+  pathSelector: {fileID: 441854649}
   robotBaseLink: {fileID: 334068822}
   colorPath0: {r: 0, g: 1, b: 0.3, a: 1}
   colorPath1: {r: 0.2, g: 0.5, b: 1, a: 1}
