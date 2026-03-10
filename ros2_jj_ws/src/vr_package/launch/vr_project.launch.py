@@ -68,10 +68,11 @@ def generate_launch_description():
     # 6) PathFollower
     pathFollower_cmd = Node(
         package='vr_project',
-        executable='path_follower_node.py',
+        executable='pathFollower.py',
         name='path_follower_node',
         output='screen'
     )
+     # Sequenza di avvio con delays
     load_nodes = TimerAction(
         period=1.0,
         actions=[
@@ -95,13 +96,13 @@ def generate_launch_description():
                                 period=5.0,
                                 actions=[
                                     trajectory_cmd,
-                                    pathFollower_cmd,
-                                    LogInfo(msg='[4/5] Trajectory generator + Path follower started...'),
+                                    LogInfo(msg='[4/5] Trajectory generator started...'),
 
                                     TimerAction(
                                         period=2.0,
                                         actions=[
-                                            LogInfo(msg='[5/5] System ready!')
+                                            pathFollower_cmd,
+                                            LogInfo(msg='[5/5] Path follower started. System ready!')
                                         ]
                                     )
                                 ]
