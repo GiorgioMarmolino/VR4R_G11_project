@@ -80,7 +80,8 @@ public class CandidatePathVisualizer : MonoBehaviour
         ros.Subscribe<PathMsg>(path1Topic, msg => OnPathReceived(msg, 1));
         ros.Subscribe<PathMsg>(path2Topic, msg => OnPathReceived(msg, 2));
         ros.Subscribe<OdometryMsg>("/odom", OnOdomReceived);
-        ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
+        ros.Subscribe<PoseStampedMsg>("/goal_pose_request", OnGoalReceived);
+        //ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
 
         Debug.Log("[CandidatePathVisualizer] Pronto.");
     }

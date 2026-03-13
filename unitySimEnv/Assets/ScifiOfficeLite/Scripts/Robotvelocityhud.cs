@@ -51,8 +51,8 @@ public class RobotVelocityHUD : MonoBehaviour
     {
         var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<OdometryMsg>(odomTopic, OnOdometryReceived);
-        ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose", OnGoalPoseReceived);
-        Debug.Log($"[RobotVelocityHUD] In ascolto su: {odomTopic} e /goal_pose");
+        ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose_request", OnGoalPoseReceived);
+        //Debug.Log($"[RobotVelocityHUD] In ascolto su: {odomTopic} e /goal_pose");
     }
 
     void OnOdometryReceived(OdometryMsg msg)
@@ -92,7 +92,7 @@ public class RobotVelocityHUD : MonoBehaviour
         if (goalPoseText != null)
             goalPoseText.text = hasGoal
                 ? $"Goal: X={goalX:F2} Y={goalY:F2} m"
-                : "Goal: nessuno";
+                : "Goal: -- | --";
         if (yawText != null)
             yawText.text = $"Yaw: {yawDegrees:F1}°";
     }

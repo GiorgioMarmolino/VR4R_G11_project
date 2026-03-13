@@ -103,7 +103,7 @@ public class PathEditor : MonoBehaviour
         // Path selezionato — aspetta che l'utente decida se modificare
         // L'attivazione avviene tramite Activate() chiamato da SelectionUIHUD
         Debug.Log($"[PathEditor] Path {index} selezionato, pronto per modifica.");
-        Activate();
+        //Activate();
     }
 
     /// <summary>

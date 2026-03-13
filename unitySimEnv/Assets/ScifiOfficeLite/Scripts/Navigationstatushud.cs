@@ -65,7 +65,8 @@ public class NavigationStatusHUD : MonoBehaviour
         var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<OdometryMsg>("/odom", OnOdomReceived);
         ros.Subscribe<LaserScanMsg>("/scan", OnScanReceived);
-        ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
+        // ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
+        ros.Subscribe<PoseStampedMsg>("/goal_pose_request", OnGoalReceived);
         ros.Subscribe<RosMessageTypes.Geometry.PoseWithCovarianceStampedMsg>("/amcl_pose", OnAmclReceived);
 
         InvokeRepeating("UpdateFrequencies", 1f, 0.5f);

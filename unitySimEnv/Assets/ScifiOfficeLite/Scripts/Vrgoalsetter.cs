@@ -17,7 +17,7 @@ using System.Collections.Generic;
 public class VRGoalSetter : MonoBehaviour
 {
     [Header("Impostazioni ROS")]
-    public string goalTopic = "/goal_pose";
+    public string goalTopic = "/goal_pose_request"; // invece di /goal_pose
     public string mapFrame  = "map";
 
     [Header("Impostazioni Marker")]

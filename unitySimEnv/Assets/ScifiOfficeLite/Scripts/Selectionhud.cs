@@ -110,7 +110,8 @@ public class SelectionUIHUD : MonoBehaviour
         // ROS — odom per distanza/ETA
         var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<RosMessageTypes.Nav.OdometryMsg>("/odom", OnOdomReceived);
-        ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose", OnGoalReceived);
+        ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose_request", OnGoalReceived);
+        //ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose", OnGoalReceived);
 
         bannerBg = bannerPanel?.GetComponent<Image>();
 

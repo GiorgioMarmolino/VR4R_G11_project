@@ -65,9 +65,10 @@ class GoalListenerNode(Node):
         self.goal_queue = goal_queue
 
         self.create_subscription(
-            PoseStamped, '/goal_pose', self.on_goal, 10)
+            PoseStamped, '/goal_pose_request', self.on_goal, 10)
+        # PoseStamped, '/goal_pose', self.on_goal, 10)
 
-        self.get_logger().info('GoalListenerNode: in ascolto su /goal_pose')
+        self.get_logger().info('GoalListenerNode: in ascolto su /goal_pose_request')
 
     def on_goal(self, msg: PoseStamped):
         self.get_logger().info(
