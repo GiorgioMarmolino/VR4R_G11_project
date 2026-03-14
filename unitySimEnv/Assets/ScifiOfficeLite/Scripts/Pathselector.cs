@@ -152,15 +152,6 @@ public class PathSelector : MonoBehaviour
             if (hoveredPath >= 0 && hoveredPath != selectedPath)
                 pathVisualizer.SetPathColor(hoveredPath, hoverColor);
         }
-
-        Debug.Log($"[PathSelector] hoveredPath={hoveredPath}, closestDist={closestDist:F3}"); 
-        Debug.Log($"[PathSelector] rayOrigin={rayOrigin}, rayDir={rayDir}");
-        for (int i = 0; i < 3; i++)
-        {
-            Vector3[] pts = pathVisualizer.GetPathPoints(i);
-            float dist = GetMinDistanceToPath(i, rayOrigin, rayDir);
-            Debug.Log($"[PathSelector] Path {i}: punti={pts?.Length ?? 0}, dist={dist:F3}");
-        }
     }
 
     float GetMinDistanceToPath(int pathIndex, Vector3 rayOrigin, Vector3 rayDir)
@@ -224,8 +215,9 @@ public class PathSelector : MonoBehaviour
             if (dev.TryGetFeatureValue(CommonUsages.triggerButton, out bool val))
                 triggerPressed = val;
 
-        // PC fallback
-        if (Input.GetMouseButtonDown(0))
+        // PC fallback — ignora se il mouse è sopra un elemento UI
+        if (Input.GetMouseButtonDown(0) &&
+            !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             triggerPressed = true;
 
         bool triggerDown = triggerPressed && !prevTrigger;

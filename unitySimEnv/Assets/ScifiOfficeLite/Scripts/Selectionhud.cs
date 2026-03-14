@@ -34,6 +34,8 @@ public class SelectionUIHUD : MonoBehaviour
     public PathSelector            pathSelector;
     public PathEditor              pathEditor;
     public PathExecutor            pathExecutor;
+    public RobotVelocityHUD        velocityHUD;
+    public NavigationStatusHUD     navigationHUD;
 
     [Header("Pannelli")]
     public GameObject bannerPanel;
@@ -58,6 +60,7 @@ public class SelectionUIHUD : MonoBehaviour
     [Header("Executing Panel")]
     public TextMeshProUGUI navStatusText;
     public TextMeshProUGUI navInfoText;
+    public Button          stopButton;
 
     [Header("Colori Stato")]
     public Color colorIdle      = new Color(0.3f,  0.3f,  0.3f,  0.8f);
@@ -65,6 +68,10 @@ public class SelectionUIHUD : MonoBehaviour
     public Color colorSelected  = new Color(0f,    1f,    0.7f,  0.9f);  // ciano
     public Color colorEditing   = new Color(1f,    0.6f,  0f,    0.9f);  // arancione
     public Color colorExecuting = new Color(0.2f,  1f,    0.3f,  0.9f);  // verde
+
+    // Publisher cancel
+    private ROSConnection ros;
+    private const string cancelTopic = "/cancel_navigation";
 
     // Stato corrente
     public UIState CurrentState { get; private set; } = UIState.Idle;
@@ -85,11 +92,15 @@ public class SelectionUIHUD : MonoBehaviour
 
     void Start()
     {
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.RegisterPublisher<RosMessageTypes.Std.BoolMsg>(cancelTopic);
+
         // Collega bottoni
         if (modifyButton  != null) modifyButton.onClick.AddListener(OnModifyClicked);
         if (executeButton != null) executeButton.onClick.AddListener(OnExecuteClicked);
         if (cancelButton  != null) cancelButton.onClick.AddListener(OnCancelClicked);
         if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirmClicked);
+        if (stopButton    != null) stopButton.onClick.AddListener(OnStopClicked);
 
         // Collega eventi
         if (pathSelector != null)
@@ -108,10 +119,8 @@ public class SelectionUIHUD : MonoBehaviour
         }
 
         // ROS — odom per distanza/ETA
-        var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<RosMessageTypes.Nav.OdometryMsg>("/odom", OnOdomReceived);
         ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose_request", OnGoalReceived);
-        //ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose", OnGoalReceived);
 
         bannerBg = bannerPanel?.GetComponent<Image>();
 
@@ -133,6 +142,8 @@ public class SelectionUIHUD : MonoBehaviour
             Vector2.Distance(robotPos, goalPos) < 0.4f)
         {
             hasGoal = false;
+            if (velocityHUD    != null) velocityHUD.ResetGoal();
+            if (navigationHUD != null) navigationHUD.ResetGoal();
             SetState(UIState.Idle);
         }
     }
@@ -143,16 +154,40 @@ public class SelectionUIHUD : MonoBehaviour
             (float)msg.pose.position.x,
             (float)msg.pose.position.y);
         hasGoal = true;
+
+        // Se sta navigando, cancella prima il goal corrente
+        if (CurrentState == UIState.Executing)
+        {
+            Debug.Log("[SelectionUIHUD] Nuovo goal durante Executing — cancello navigazione corrente.");
+            var cancelMsg = new RosMessageTypes.Std.BoolMsg();
+            cancelMsg.data = true;
+            ros.Publish(cancelTopic, cancelMsg);
+
+            if (pathVisualizer != null)
+            {
+                pathVisualizer.HideAllPaths();
+                pathVisualizer.Unfreeze();
+            }
+            if (pathEditor   != null) pathEditor.Deactivate();
+        }
+
+        if (pathSelector != null) pathSelector.Activate();
         SetState(UIState.Selecting);
     }
 
     void OnPathSelected(int index)
     {
-        selectedPathIndex = index;
+        // Ignora se non siamo in fase di selezione
+        if (CurrentState != UIState.Selecting)
+        {
+            Debug.Log($"[SelectionUIHUD] OnPathSelected ignorato — stato: {CurrentState}");
+            return;
+        }
 
-        // Calcola lunghezza del path selezionato
-        Vector3[] pts = pathVisualizer?.GetPathPoints(index);
+        selectedPathIndex  = index;
         selectedPathLength = 0f;
+
+        Vector3[] pts = pathVisualizer?.GetPathPoints(index);
         if (pts != null)
             for (int i = 0; i < pts.Length - 1; i++)
                 selectedPathLength += Vector3.Distance(pts[i], pts[i + 1]);
@@ -162,6 +197,34 @@ public class SelectionUIHUD : MonoBehaviour
 
     // ── Bottoni ──────────────────────────────────────────────────────────────
 
+    void OnStopClicked()
+    {
+        Debug.Log($"[SelectionUIHUD] STOP da stato: {CurrentState}");
+
+        // Pubblica cancel su ROS — ferma il robot se sta navigando
+        if (CurrentState == UIState.Executing)
+        {
+            var msg = new RosMessageTypes.Std.BoolMsg();
+            msg.data = true;
+            ros.Publish(cancelTopic, msg);
+        }
+
+        // Reset completo Unity
+        if (pathVisualizer != null)
+        {
+            pathVisualizer.HideAllPaths();
+            pathVisualizer.Unfreeze();
+        }
+        if (pathEditor   != null) pathEditor.Deactivate();
+        if (pathSelector != null) pathSelector.Deactivate();
+
+        hasGoal = false;
+        if (velocityHUD    != null) velocityHUD.ResetGoal();
+        if (navigationHUD != null) navigationHUD.ResetGoal();
+        SetState(UIState.Idle);
+        Debug.Log("[SelectionUIHUD] Tornato a IDLE.");
+    }
+
     void OnModifyClicked()
     {
         SetState(UIState.Editing);
@@ -170,14 +233,28 @@ public class SelectionUIHUD : MonoBehaviour
 
     void OnExecuteClicked()
     {
+        Vector3[] pts = pathVisualizer?.GetSelectedPathPoints();
+        if (pts == null) return;
+
+        // Disattiva selector — non si può riselezionare durante esecuzione
+        if (pathSelector != null) pathSelector.Deactivate();
+
+        // Nascondi le 3 candidate — rimane solo quella selezionata
+        pathVisualizer.HideAllPaths();
+
+        // Mostra la traiettoria selezionata in arancione
+        pathVisualizer.ShowExecutingPath(pts);
+
+        // Freeze — non sovrascrivere con nuovi topic
+        pathVisualizer.Freeze();
+
+        // Setta il goal sull'ultimo punto per rilevare quando viene raggiunto
+        pathVisualizer.SetEditedGoal(pts[pts.Length - 1]);
+
         SetState(UIState.Executing);
+
         if (pathExecutor != null)
-        {
-            Vector3[] pts = pathVisualizer?.GetSelectedPathPoints();
-            if (pts != null) pathExecutor.ExecutePath(pts);
-        }
-        // Freezing del visualizer
-        if (pathVisualizer != null) pathVisualizer.Freeze();
+            pathExecutor.ExecutePath(pts);
     }
 
     void OnCancelClicked()
@@ -204,13 +281,13 @@ public class SelectionUIHUD : MonoBehaviour
 
     void UpdatePanels()
     {
-        if (bannerPanel    != null) bannerPanel.SetActive(
-            CurrentState != UIState.Idle);
-        if (actionPanel    != null) actionPanel.SetActive(
-            CurrentState == UIState.Selected);
-        if (editPanel      != null) editPanel.SetActive(
-            CurrentState == UIState.Editing);
-        if (executingPanel != null) executingPanel.SetActive(
+        if (bannerPanel    != null) bannerPanel.SetActive(CurrentState != UIState.Idle);
+        if (actionPanel    != null) actionPanel.SetActive(CurrentState == UIState.Selected);
+        if (editPanel      != null) editPanel.SetActive(CurrentState == UIState.Editing);
+        if (executingPanel != null) executingPanel.SetActive(CurrentState == UIState.Executing);
+
+        // Stop visibile solo durante EXECUTING
+        if (stopButton != null) stopButton.gameObject.SetActive(
             CurrentState == UIState.Executing);
     }
 
@@ -307,4 +384,4 @@ public class SelectionUIHUD : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.E)) OnExecuteClicked();
         }
     }
-}//
+}

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 public class NavigationStatusHUD : MonoBehaviour
 {
     [Header("Impostazioni ROS")]
-    public float rosTimeoutSecs = 3f; // secondi senza messaggi = disconnesso
+    public float rosTimeoutSecs = 3f;
 
     [Header("Riferimenti UI — Navigazione")]
     public Text navStatusText;
@@ -51,21 +51,20 @@ public class NavigationStatusHUD : MonoBehaviour
     private List<float> odomTimes = new List<float>();
     private List<float> scanTimes = new List<float>();
 
-    // Connessione ROS — rilevata via messaggi
-    private bool  rosConnected        = false;
+    // Connessione ROS
+    private bool  rosConnected         = false;
     private bool  firstMessageReceived = false;
-    private float lastRosRx           = -999f;
-    private bool  rxFlash             = false;
-    private bool  txFlash             = false;
-    private float rxFlashTime         = -999f;
-    private float txFlashTime         = -999f;
+    private float lastRosRx            = -999f;
+    private bool  rxFlash              = false;
+    private bool  txFlash              = false;
+    private float rxFlashTime          = -999f;
+    private float txFlashTime          = -999f;
 
     void Start()
     {
         var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<OdometryMsg>("/odom", OnOdomReceived);
         ros.Subscribe<LaserScanMsg>("/scan", OnScanReceived);
-        // ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
         ros.Subscribe<PoseStampedMsg>("/goal_pose_request", OnGoalReceived);
         ros.Subscribe<RosMessageTypes.Geometry.PoseWithCovarianceStampedMsg>("/amcl_pose", OnAmclReceived);
 
@@ -73,7 +72,16 @@ public class NavigationStatusHUD : MonoBehaviour
         InvokeRepeating("CheckROSConnection", 0.5f, 0.5f);
     }
 
-    // ── Controlla connessione tramite ROSConnectionMonitor ───────────────────
+    // ── Chiamato da SelectionUIHUD su STOP o goal raggiunto ─────────────────
+    public void ResetGoal()
+    {
+        hasGoal        = false;
+        distanceToGoal = -1f;
+        eta            = -1f;
+        navStatus      = "IDLE";
+    }
+
+    // ── Controlla connessione ────────────────────────────────────────────────
     void CheckROSConnection()
     {
         bool wasConnected = rosConnected;
@@ -101,7 +109,6 @@ public class NavigationStatusHUD : MonoBehaviour
         lastRosRx = Time.time;
         if (!rosConnected) return;
 
-        // Flash RX max una volta ogni 0.3s
         if (Time.time - rxFlashTime > 0.3f)
             rxFlashTime = Time.time;
 
@@ -204,7 +211,7 @@ public class NavigationStatusHUD : MonoBehaviour
         }
 
         if (distanceToGoalText != null)
-            distanceToGoalText.text = hasGoal ? $"Goal: {distanceToGoal:F1} m" : "Goal: --";
+            distanceToGoalText.text = hasGoal ? $"Goal: {distanceToGoal:F1} m" : "Goal: -- | --";
 
         if (etaText != null)
             etaText.text = eta > 0f ? $"ETA: {eta:F0} s" : "ETA: --";
@@ -233,8 +240,8 @@ public class NavigationStatusHUD : MonoBehaviour
 
         if (rosArrowsText != null)
         {
-            string txColor = txFlash ? "#00FFFF" : "#444444"; // ciano = TX
-            string rxColor = rxFlash ? "#00FF88" : "#444444"; // verde  = RX
+            string txColor = txFlash ? "#00FFFF" : "#444444";
+            string rxColor = rxFlash ? "#00FF88" : "#444444";
             rosArrowsText.text = $"<color={txColor}>▲TX</color>  <color={rxColor}>▼RX</color>";
         }
     }

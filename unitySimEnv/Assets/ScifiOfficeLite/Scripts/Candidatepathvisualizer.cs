@@ -81,7 +81,6 @@ public class CandidatePathVisualizer : MonoBehaviour
         ros.Subscribe<PathMsg>(path2Topic, msg => OnPathReceived(msg, 2));
         ros.Subscribe<OdometryMsg>("/odom", OnOdomReceived);
         ros.Subscribe<PoseStampedMsg>("/goal_pose_request", OnGoalReceived);
-        //ros.Subscribe<PoseStampedMsg>("/goal_pose", OnGoalReceived);
 
         Debug.Log("[CandidatePathVisualizer] Pronto.");
     }
@@ -131,8 +130,6 @@ public class CandidatePathVisualizer : MonoBehaviour
 
         HideAllPaths();
         Debug.Log($"[CandidatePathVisualizer] Nuovo goal — reset completo.");
-        Debug.Log($"[CPV] OnGoalReceived! pathEditor={pathEditor != null}, pathSelector={pathSelector != null}");
-        Debug.Log($"[CPV] frozen={frozen}, hasGoal={hasGoal}");
     }
 
     void OnOdomReceived(OdometryMsg msg)
@@ -258,6 +255,18 @@ public class CandidatePathVisualizer : MonoBehaviour
         );
         hasGoal = true;
         Debug.Log($"[CandidatePathVisualizer] Goal editato settato: ros x={currentGoal.x:F2}, y={currentGoal.y:F2}");
+    }
+
+    /// <summary>Mostra il path in esecuzione in arancione — come il path editato.</summary>
+    public void ShowExecutingPath(Vector3[] points)
+    {
+        // Usa il lineRenderer 0 per mostrare il path in esecuzione
+        Color orange = new Color(1f, 0.5f, 0f, 1f);
+        lineRenderers[0].positionCount = points.Length;
+        lineRenderers[0].SetPositions(points);
+        lineRenderers[0].startWidth    = selectedWidth;
+        lineRenderers[0].endWidth      = selectedWidth;
+        lineRenderers[0].material.color = orange;
     }
 
     /// <summary>Blocca aggiornamenti dal topic — chiamato da PathEditor alla conferma.</summary>

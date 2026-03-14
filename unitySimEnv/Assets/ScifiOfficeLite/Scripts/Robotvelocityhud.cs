@@ -52,7 +52,6 @@ public class RobotVelocityHUD : MonoBehaviour
         var ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<OdometryMsg>(odomTopic, OnOdometryReceived);
         ros.Subscribe<RosMessageTypes.Geometry.PoseStampedMsg>("/goal_pose_request", OnGoalPoseReceived);
-        //Debug.Log($"[RobotVelocityHUD] In ascolto su: {odomTopic} e /goal_pose");
     }
 
     void OnOdometryReceived(OdometryMsg msg)
@@ -61,13 +60,12 @@ public class RobotVelocityHUD : MonoBehaviour
         angularZ = (float)msg.twist.twist.angular.z;
         posX     = (float)msg.pose.pose.position.x;
         posY     = (float)msg.pose.pose.position.y;
-        // Calcola yaw dal quaternione
+
         float qx = (float)msg.pose.pose.orientation.x;
         float qy = (float)msg.pose.pose.orientation.y;
         float qz = (float)msg.pose.pose.orientation.z;
         float qw = (float)msg.pose.pose.orientation.w;
 
-        // Formula per estrarre yaw da quaternione ROS
         yawDegrees = Mathf.Atan2(2f * (qw * qz + qx * qy), 1f - 2f * (qy * qy + qz * qz)) * Mathf.Rad2Deg;
     }
 
@@ -76,6 +74,14 @@ public class RobotVelocityHUD : MonoBehaviour
         goalX   = (float)msg.pose.position.x;
         goalY   = (float)msg.pose.position.y;
         hasGoal = true;
+    }
+
+    /// <summary>Chiamato da SelectionUIHUD su STOP o goal raggiunto — resetta il display.</summary>
+    public void ResetGoal()
+    {
+        hasGoal = false;
+        goalX   = 0f;
+        goalY   = 0f;
     }
 
     void Update()
@@ -93,6 +99,7 @@ public class RobotVelocityHUD : MonoBehaviour
             goalPoseText.text = hasGoal
                 ? $"Goal: X={goalX:F2} Y={goalY:F2} m"
                 : "Goal: -- | --";
+
         if (yawText != null)
             yawText.text = $"Yaw: {yawDegrees:F1}°";
     }
