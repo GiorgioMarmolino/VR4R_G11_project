@@ -81,6 +81,12 @@ public class NavigationStatusHUD : MonoBehaviour
         navStatus      = "IDLE";
     }
 
+    /// <summary>Chiamato da SelectionUIHUD quando il robot inizia effettivamente a muoversi.</summary>
+    public void StartNavigation()
+    {
+        navStatus = "NAVIGATING";
+    }
+
     // ── Controlla connessione ────────────────────────────────────────────────
     void CheckROSConnection()
     {
@@ -149,7 +155,7 @@ public class NavigationStatusHUD : MonoBehaviour
         goalPos     = new Vector2((float)msg.pose.position.x,
                                   (float)msg.pose.position.y);
         hasGoal     = true;
-        navStatus   = "NAVIGATING";
+        // navStatus rimane IDLE — diventa NAVIGATING solo quando il robot parte
     }
 
     void OnAmclReceived(RosMessageTypes.Geometry.PoseWithCovarianceStampedMsg msg)

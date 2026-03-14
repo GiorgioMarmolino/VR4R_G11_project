@@ -108,7 +108,10 @@ public class SelectionUIHUD : MonoBehaviour
 
         if (pathEditor != null)
         {
-            pathEditor.OnPathConfirmed  += _ => SetState(UIState.Executing);
+            pathEditor.OnPathConfirmed  += _ => {
+                SetState(UIState.Executing);
+                if (navigationHUD != null) navigationHUD.StartNavigation();
+            };
             pathEditor.OnEditCancelled  += () => SetState(UIState.Selecting);
         }
 
@@ -252,6 +255,7 @@ public class SelectionUIHUD : MonoBehaviour
         pathVisualizer.SetEditedGoal(pts[pts.Length - 1]);
 
         SetState(UIState.Executing);
+        if (navigationHUD != null) navigationHUD.StartNavigation();
 
         if (pathExecutor != null)
             pathExecutor.ExecutePath(pts);
