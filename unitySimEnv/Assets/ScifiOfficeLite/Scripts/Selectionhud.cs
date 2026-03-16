@@ -180,8 +180,10 @@ public class SelectionUIHUD : MonoBehaviour
 
     void OnPathSelected(int index)
     {
-        // Ignora se non siamo in fase di selezione
-        if (CurrentState != UIState.Selecting)
+        Debug.Log($"[OnPathSelected] chiamato con index={index}, stato corrente={CurrentState}");
+        
+        // ✅ Permetti riselezione anche da Selected
+        if (CurrentState != UIState.Selecting && CurrentState != UIState.Selected)
         {
             Debug.Log($"[SelectionUIHUD] OnPathSelected ignorato — stato: {CurrentState}");
             return;
