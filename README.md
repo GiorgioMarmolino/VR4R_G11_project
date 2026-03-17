@@ -4,8 +4,7 @@
 ## Overview
 Shared autonomy is a human-robot interaction paradigm where control is distributed between a human operator and an autonomous system, combining human judgment with robot planning capabilities. This project implements a shared autonomy pipeline for mobile robot navigation in VR: a ROS2-based planner Nav2 generates multiple candidate trajectories that are visualized in real time inside a Unity simulation, where the operator can select or edit them via a VR/GUI interface before sending the final path to the robot for execution. The goal is to provide a modular and extensible platform for future research in human-robot collaboration.
 
-
-https://github.com/user-attachments/assets/5eca5cfb-2170-4491-b4e2-cf1b84357ff8
+https://github.com/user-attachments/assets/87f03db9-5a19-46ea-89e9-654f295012ef
 ---
 ## Requirements
 
