@@ -92,7 +92,7 @@ The VR interface operates as a finite state machine (FSM) to manage user interac
 stateDiagram-v2
     [*] --> Idle
     Idle --> Selecting : Goal Pose Input
-    Selecting trajectory --> Selected trajectory : Human selection
+    Selecting --> Selected : Human selection
     Selected --> Editing : Modify Path
     Selected --> Executing : Execute Path
     Editing --> Executing : Confirm
