@@ -91,13 +91,15 @@ The VR interface operates as a finite state machine (FSM) to manage user interac
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Selecting : Start Input
-    Selecting --> Selected : Confirm Goal
+    Idle --> Selecting : Goal Pose Input
+    Selecting trajectory --> Selected trajectory : Human selection
     Selected --> Editing : Modify Path
-    Selected --> Executing : Confirm Path
-    Editing --> Selected : Save Changes
+    Selected --> Executing : Execute Path
+    Editing --> Executing : Confirm
+    Editing --> Idle : Cancel
     Executing --> Idle : Task Complete
-    Executing --> Idle : Emergency Stop
+    Executing --> Idle : Stop
+    Executing --> Selecting : New Goal Pose Input
 ```
 ---
 
@@ -111,9 +113,8 @@ stateDiagram-v2
 ### Environment
 - **Type**: 3D simulated workspace with collision meshes
 - **Features**: 
-  - Dynamic obstacle spawning
-  - Configurable lighting and textures
-  - Ground truth sensor simulation (LiDAR, RGB-D, IMU)
+  - 
+  - Ground truth sensor simulation (LiDAR)
 
 ### Robot Type
 - **Model**: Mogi Bot ([see documentation](./docs/mogi-bot.md))
@@ -121,15 +122,6 @@ stateDiagram-v2
   - Differential drive base
   - Modular sensor payload
   - URDF/SDF description available for Gazebo/Unity sync
-
----
-## Launch File
-
-
-
-# Nodes Description
-
-
 
 
 ---
@@ -190,26 +182,30 @@ ros2 run nav2_map_server map_saver_cli -f map_of_world
 ## Installation
 - Clone the package inside your ROS2 workspace src folder:
 ```bash
-cd ~/ros2_ws/src/
-git clone https://github.com/paololais/ERL_assignment2.git
+mkdir ~/VR4R
+cd ~/VR4R/
+git clone https://github.com/GiorgioMarmolino/VR4R_G11_project
 ```
-
 - Build the package and source:
 ```bash
-cd ~/ros2_ws
+cd ~/ros2_jj_ws
 colcon build
 source install/local_setup.bash
 ```
+In Unity:
+* Drag and drop the `unitySimEnv/Assets/Scenes/RoboticsSimulationSceneVRG11.unity` in the *Hierarchy*.
 
 ## Usage
-- Launch the Gazebo simulation, Rviz, calculate the plan and execute it:
+- Open Unity, and start the simulation, press the play button;
+- Launch ROS2, Rviz2:
 ```bash
-ros2 launch assignment2 assignment.launch.py
+ros2 launch vr_project vr_project.launch.py
 ```
+Now in Unity you can move to set a goal and choose to edit it or execute.
 
+## Simulation
 
-
-
+The project uses **Unity 2022.3.62f3** as the simulation environment, integrated with **ROS2 Jazzy** via the `ros_tcp_endpoint` package. The simulated robot (Mogi Bot) runs in a configurable 3D workspace with support for VR interaction and sensor simulation.
 
 
 
