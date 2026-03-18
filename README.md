@@ -196,7 +196,14 @@ ros2 launch vr_project vr_project.launch.py
 ```
 Now in Unity you can move to set a goal and choose to edit it or execute.
 
-
+## Future Developments
+The current implementation provides a functional baseline for VR-based shared autonomy, but several directions remain open for future work.
+A first natural extension concerns the planning module: the system currently relies on Nav2 as the sole path planner. Integrating alternative planners such as RRT*, A*, or language-model-based approaches like NavGPT and NavGPT2 would allow the operator to 
+choose among trajectories generated with different optimization criteria, such as shortest path, safest path, or energy efficiency. On the interaction side, the current editing mechanism allows waypoint dragging via controller, but does not provide any 
+predictive feedback on the feasibility of the modified trajectory with respect to kinematic constraints. A future implementation could incorporate real-time feasibility checking, warning the operator when the edited path is not executable by the robot.
+Another relevant direction is the extension to physical hardware. The pipeline was developed and tested entirely in simulation; deploying it on a real differential drive platform would require validating the map-to-reality coherence and the latency of the 
+Unity-ROS2 communication under real network conditions. Finally, a formal user study evaluating the fluency and cognitive load of the shared autonomy interface - compared to full teleoperation and full autonomy baselines - would provide quantitative evidence 
+of the system's effectiveness as a human-robot collaboration tool.
 
 
 
