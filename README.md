@@ -197,7 +197,7 @@ When satisfied with the new path, press **Execute** to start navigation.
 **Stopping navigation**
 To stop the robot or cancel the current goal at any time during execution, press the **Stop** button on the right side of the UI.
 
-## Bugs and Tips
+## Tips & Tricks (Debugging)
 The ROS side of the system has a particularly delicate launch sequence. If the launch does not complete successfully, the system will not function correctly and a full restart will be required.
 
 **Startup order**
